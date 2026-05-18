@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>체육·정보 융합 수업</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+@import url('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f5f3;--bg2:#fff;--bg3:#f0f0ee;--bg4:#e8e8e5;
+  --text:#1a1a1a;--text2:#666;--text3:#999;
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);
+  --rad:8px;--rad-lg:12px;
+  --green:#3B6D11;--green-bg:#EAF3DE;
+  --blue:#185FA5;--blue-bg:#E6F1FB;
+  --amber:#854F0B;--amber-bg:#FAEEDA;
+  --red:#A32D2D;--red-bg:#FCEBEB;
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.screen{display:none;min-height:100vh;flex-direction:column}
+.screen.active{display:flex}
+
+#loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+#loading-overlay.show{display:flex}
+.spinner{width:44px;height:44px;border:3px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin .75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading-overlay p{color:#fff;font-size:15px;font-weight:500}
+
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;flex-wrap:wrap}
+.tb-title{font-size:14px;font-weight:700}
+.tb-sub{font-size:11px;color:var(--text2)}
+.back-btn,.abtn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border:1px solid var(--border2);border-radius:var(--rad);background:transparent;cursor:pointer;font-size:12px;font-family:inherit;color:var(--text);white-space:nowrap;transition:background .15s}
+.back-btn:hover,.abtn:hover{background:var(--bg3)}
+.abtn.p{background:var(--text);color:var(--bg2);border-color:var(--text)}
+.abtn.p:hover{opacity:.85}
+.abtn.green{background:var(--green);color:#fff;border-color:var(--green)}
+.abtn.green:hover{opacity:.85}
+.abtn.red{background:var(--red);color:#fff;border-color:var(--red)}
+.abtn.red:hover{opacity:.85}
+.abtn:disabled{opacity:.4;cursor:not-allowed}
+.tb-actions{margin-left:auto;display:flex;gap:7px;flex-shrink:0}
+
+/* HOME */
+#home{background:var(--bg)}
+.hero{padding:36px 20px 20px;text-align:center}
+.hero-title{font-size:22px;font-weight:700;margin-bottom:5px}
+.hero-sub{font-size:13px;color:var(--text2)}
+.badge-row{display:flex;justify-content:center;gap:7px;margin-top:10px;flex-wrap:wrap}
+.bdg{padding:3px 11px;border-radius:999px;font-size:11px;font-weight:500;background:var(--bg3);border:1px solid var(--border);color:var(--text2)}
+.card-grid{display:grid;grid-template-columns:1fr;gap:12px;padding:0 18px 28px;max-width:520px;margin:0 auto;width:100%}
+.nc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-lg);padding:20px;cursor:pointer;transition:border-color .15s,transform .12s;display:flex;align-items:center;gap:15px}
+.nc:hover{border-color:var(--border2);transform:translateY(-1px)}
+.ni{width:46px;height:46px;border-radius:var(--rad);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.ni.g{background:var(--green-bg);color:var(--green)}
+.ni.b{background:var(--blue-bg);color:var(--blue)}
+.ni.a{background:var(--amber-bg);color:var(--amber)}
+.ni.r{background:var(--red-bg);color:var(--red)}
+.nc-name{font-size:14px;font-weight:700;margin-bottom:3px}
+.nc-desc{font-size:12px;color:var(--text2);line-height:1.5}
+.nc-arr{margin-left:auto;color:var(--text3);font-size:18px;flex-shrink:0}
+
+.content{padding:18px;max-width:760px;margin:0 auto;width:100%}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-lg);padding:18px;margin-bottom:12px}
+.sec-label{font-size:10px;font-weight:500;color:var(--text2);margin:16px 0 7px;letter-spacing:.06em;text-transform:uppercase}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fl{font-size:12px;font-weight:500;color:var(--text2)}
+.fi{padding:8px 11px;border:1px solid var(--border2);border-radius:var(--rad);font-size:13px;font-family:inherit;background:var(--bg2);color:var(--text);width:100%}
+.fi:focus{outline:none;border-color:#555}
+.fta{padding:9px 11px;border:1px solid var(--border2);border-radius:var(--rad);font-size:13px;font-family:inherit;background:var(--bg2);color:var(--text);resize:vertical;min-height:85px;line-height:1.65;width:100%}
+.fta:focus{outline:none;border-color:#555}
+.qt{font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:flex-start;gap:8px}
+.qn{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--text);color:var(--bg2);font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px}
+.smsg{padding:10px 14px;border-radius:var(--rad);font-size:13px;margin-top:10px;display:none}
+.smsg.ok{background:var(--green-bg);color:var(--green);display:block}
+.smsg.err{background:var(--red-bg);color:var(--red);display:block}
+.smsg.info{background:var(--blue-bg);color:var(--blue);display:block}
+
+.team-div{display:flex;align-items:center;gap:10px;margin:8px 0 14px}
+.team-div-line{flex:1;height:1px;background:var(--border)}
+.team-div-label{font-size:11px;font-weight:500;color:var(--text2);white-space:nowrap}
+.mem-block{border:1px solid var(--border);border-radius:var(--rad);padding:13px;margin-bottom:10px}
+.mem-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.mtag{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.mtag.m1{background:var(--blue-bg);color:#0C447C}
+.mtag.m2{background:var(--green-bg);color:#27500A}
+
+/* MATERIALS */
+.mat-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-lg);padding:13px;display:flex;align-items:center;gap:12px;margin-bottom:9px}
+.mat-icon{width:38px;height:38px;border-radius:var(--rad);background:var(--blue-bg);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.mat-name{font-size:13px;font-weight:500}
+.mat-meta{font-size:11px;color:var(--text2);margin-top:2px}
+.dl-btn{padding:5px 12px;border:1px solid var(--border2);border-radius:var(--rad);background:transparent;cursor:pointer;font-size:12px;font-family:inherit;color:var(--text);display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0}
+.dl-btn:hover{background:var(--bg3)}
+
+/* TEACHER TABS */
+.t-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);padding:0 16px;overflow-x:auto}
+.t-tab{padding:11px 14px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;color:var(--text2);white-space:nowrap}
+.t-tab.active{color:var(--text);border-bottom-color:var(--text)}
+.t-content{padding:18px;max-width:820px;margin:0 auto;width:100%}
+.t-content.hidden{display:none}
+
+/* STATS */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:18px}
+.stat-card{background:var(--bg3);border-radius:var(--rad);padding:13px}
+.stat-label{font-size:11px;color:var(--text2);margin-bottom:4px}
+.stat-val{font-size:24px;font-weight:500}
+.stat-val.ok{color:var(--green)}
+
+/* TABLE */
+.stbl{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+.stbl th{text-align:left;padding:8px 10px;font-size:10px;font-weight:500;color:var(--text2);border-bottom:1px solid var(--border)}
+.stbl td{padding:8px 10px;border-bottom:1px solid var(--border);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.s-ok{display:inline-flex;align-items:center;gap:3px;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:500;background:var(--green-bg);color:var(--green)}
+.s-no{display:inline-flex;align-items:center;gap:3px;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:500;background:var(--bg3);color:var(--text2)}
+.vbtn{padding:3px 10px;border:1px solid var(--border2);border-radius:var(--rad);background:transparent;cursor:pointer;font-size:10px;font-family:inherit}
+.vbtn:hover{background:var(--bg3)}
+
+/* ANSWER */
+.ans-block{background:var(--bg3);border-radius:var(--rad);padding:12px;margin-bottom:10px}
+.ans-q{font-size:11px;font-weight:500;color:var(--text2);margin-bottom:5px}
+.ans-a{font-size:13px;line-height:1.65}
+
+/* AI */
+.ai-sel{display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap}
+.ai-chip{padding:5px 14px;border:1px solid var(--border2);border-radius:999px;font-size:12px;cursor:pointer;font-family:inherit;background:transparent;color:var(--text)}
+.ai-chip.sel{background:var(--text);color:var(--bg2);border-color:var(--text)}
+.ai-chip:hover:not(.sel){background:var(--bg3)}
+
+/* SETEUK */
+.sk-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-lg);padding:14px;margin-bottom:11px}
+.sk-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.gen-btn{display:flex;align-items:center;gap:4px;padding:5px 12px;border:1px solid var(--border2);border-radius:var(--rad);background:transparent;cursor:pointer;font-size:12px;font-family:inherit}
+.gen-btn:hover{background:var(--bg3)}
+.gen-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Q EDITOR */
+.qe-item{background:var(--bg3);border-radius:var(--rad);padding:10px;margin-bottom:8px;display:flex;align-items:flex-start;gap:8px}
+.qe-num{font-size:10px;font-weight:700;color:var(--text2);padding-top:3px;min-width:24px}
+.qe-in{flex:1;padding:6px 10px;border:1px solid var(--border2);border-radius:var(--rad);font-size:12px;font-family:inherit;background:var(--bg2);color:var(--text)}
+.qe-in:focus{outline:none;border-color:#555}
+.qe-del{padding:5px 8px;border:1px solid var(--border2);border-radius:var(--rad);background:transparent;cursor:pointer;font-size:14px;flex-shrink:0}
+.qe-del:hover{background:var(--red-bg);color:var(--red)}
+.add-q{display:flex;align-items:center;gap:6px;padding:7px 14px;border:1px dashed var(--border2);border-radius:var(--rad);background:transparent;cursor:pointer;font-size:12px;font-family:inherit;color:var(--text2);width:100%;justify-content:center;margin-top:4px}
+.add-q:hover{background:var(--bg3)}
+
+/* LOGIN */
+.lw{display:flex;align-items:center;justify-content:center;flex:1;padding:40px 20px}
+.lcard{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-lg);padding:30px;max-width:340px;width:100%;text-align:center}
+
+/* WEBCAM */
+.cam-wrap{position:relative;width:100%;background:#000;border-radius:var(--rad-lg);overflow:hidden;margin-bottom:14px}
+.cam-wrap video,.cam-wrap canvas{width:100%;display:block;min-height:240px;background:#111;object-fit:contain}
+.cam-badge{position:absolute;top:10px;left:10px;padding:4px 11px;border-radius:999px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px}
+.cam-badge.live{background:var(--red);color:#fff}
+.cam-badge.off{background:rgba(0,0,0,.55);color:#ccc}
+.cam-dot{width:7px;height:7px;border-radius:50%;background:#ff5555;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.conn-status{padding:11px 15px;border-radius:var(--rad);font-size:13px;display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.conn-status.waiting{background:var(--bg3);color:var(--text2)}
+.conn-status.connected{background:var(--green-bg);color:var(--green)}
+.conn-status.error{background:var(--red-bg);color:var(--red)}
+.zoom-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.zoom-btn{width:32px;height:32px;border:1px solid var(--border2);border-radius:var(--rad);background:transparent;cursor:pointer;font-size:16px;color:var(--text);display:flex;align-items:center;justify-content:center}
+.zoom-btn:hover{background:var(--bg3)}
+.info-box{background:var(--bg3);border-radius:var(--rad);padding:13px;margin-bottom:13px;font-size:12px;line-height:1.75;color:var(--text2)}
+.info-box strong{color:var(--text)}
+.empty-st{text-align:center;padding:40px 20px;color:var(--text2);font-size:13px}
+.excel-btn{display:flex;align-items:center;gap:6px;padding:7px 15px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--bg2);cursor:pointer;font-size:13px;font-family:inherit}
+.excel-btn:hover{background:var(--bg3)}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading-overlay"><div class="spinner"></div><p id="loading-text">로딩 중...</p></div>
+
+<!-- HOME -->
+<div id="home" class="screen active">
+  <div class="hero">
+    <div class="hero-title">체육·정보 융합 수업</div>
+    <div class="hero-sub">AI 스마트워치로 배우는 운동 자세 교정</div>
+    <div class="badge-row">
+      <span class="bdg">하루 5차시</span>
+      <span class="bdg">2인 1조</span>
+      <span class="bdg">티처블머신 + 헥사보드</span>
+    </div>
+  </div>
+  <div class="card-grid">
+    <div class="nc" onclick="go('materials')">
+      <div class="ni g"><i class="ti ti-file-download"></i></div>
+      <div><div class="nc-name">수업 자료 다운로드</div><div class="nc-desc">차시별 학습 자료·매뉴얼·가이드</div></div>
+      <i class="ti ti-chevron-right nc-arr"></i>
+    </div>
+    <div class="nc" onclick="go('worksheet')">
+      <div class="ni b"><i class="ti ti-pencil"></i></div>
+      <div><div class="nc-name">수업 활동지 작성</div><div class="nc-desc">2인 1조 공동 활동지 + 개인 소감문</div></div>
+      <i class="ti ti-chevron-right nc-arr"></i>
+    </div>
+    <div class="nc" onclick="go('viewer')">
+      <div class="ni r"><i class="ti ti-video"></i></div>
+      <div><div class="nc-name">교사 화면 보기</div><div class="nc-desc">선생님 웹캠 화면을 실시간으로 시청 (WebRTC)</div></div>
+      <i class="ti ti-chevron-right nc-arr"></i>
+    </div>
+    <div class="nc" onclick="go('teacher-login')">
+      <div class="ni a"><i class="ti ti-shield-lock"></i></div>
+      <div><div class="nc-name">교사용 관리</div><div class="nc-desc">제출 현황 · 소감문 · 세특 생성 · 화면 방송</div></div>
+      <i class="ti ti-chevron-right nc-arr"></i>
+    </div>
+  </div>
+</div>
+
+<!-- MATERIALS -->
+<div id="materials" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="go('home')"><i class="ti ti-arrow-left"></i> 홈</button>
+    <div><div class="tb-title">수업 자료 다운로드</div></div>
+    <div class="tb-actions"><button class="abtn" onclick="showLoading('새로고침 중...');setTimeout(hideLoading,800)"><i class="ti ti-refresh"></i> 새로고침</button></div>
+  </div>
+  <div class="content">
+    <div class="sec-label">1차시</div>
+    <div class="mat-item"><div class="mat-icon"><i class="ti ti-presentation"></i></div><div style="flex:1;min-width:0"><div class="mat-name">운동 자세 분석 및 인공지능 개요.pdf</div><div class="mat-meta">관절 각도 · AI 분류 모델 원리</div></div><button class="dl-btn" onclick="fakeDownload(this)"><i class="ti ti-download"></i> 다운</button></div>
+    <div class="sec-label">2차시</div>
+    <div class="mat-item"><div class="mat-icon"><i class="ti ti-cpu"></i></div><div style="flex:1;min-width:0"><div class="mat-name">티처블머신 활용 가이드.pdf</div><div class="mat-meta">데이터 수집 · 모델 학습 · 테스트</div></div><button class="dl-btn" onclick="fakeDownload(this)"><i class="ti ti-download"></i> 다운</button></div>
+    <div class="sec-label">3차시</div>
+    <div class="mat-item"><div class="mat-icon"><i class="ti ti-device-watch"></i></div><div style="flex:1;min-width:0"><div class="mat-name">헥사보드 조립 매뉴얼.pdf</div><div class="mat-meta">스마트워치 형태 · 가속도/자이로 센서</div></div><button class="dl-btn" onclick="fakeDownload(this)"><i class="ti ti-download"></i> 다운</button></div>
+    <div class="sec-label">4–5차시</div>
+    <div class="mat-item"><div class="mat-icon"><i class="ti ti-activity"></i></div><div style="flex:1;min-width:0"><div class="mat-name">활동지 작성 안내 및 발표 양식.pdf</div><div class="mat-meta">AI 모델 결과 · 발표 자료 양식</div></div><button class="dl-btn" onclick="fakeDownload(this)"><i class="ti ti-download"></i> 다운</button></div>
+  </div>
+</div>
+
+<!-- WORKSHEET -->
+<div id="worksheet" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="go('home')"><i class="ti ti-arrow-left"></i> 홈</button>
+    <div><div class="tb-title">수업 활동지 작성</div><div class="tb-sub">2인 1조 공동 활동지 + 개인 소감문</div></div>
+    <div class="tb-actions">
+      <button class="abtn" onclick="refreshWorksheet()"><i class="ti ti-refresh"></i> 새로고침</button>
+      <button class="abtn p" onclick="saveWorksheet()"><i class="ti ti-device-floppy"></i> 저장</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px"><i class="ti ti-users" style="font-size:15px;vertical-align:-2px;margin-right:6px"></i>팀 정보 입력</div>
+      <div class="mem-block">
+        <div class="mem-hdr"><span class="mtag m1">팀원 1</span><span style="font-size:11px;color:var(--text2)">(대표 입력자)</span></div>
+        <div class="frow">
+          <div class="fg"><label class="fl">이름</label><input class="fi" id="ws-n1" type="text" placeholder="홍길동" oninput="updateLabels()"></div>
+          <div class="fg"><label class="fl">학번</label><input class="fi" id="ws-id1" type="text" placeholder="10101"></div>
+        </div>
+        <div class="fg"><label class="fl">반</label><input class="fi" id="ws-c1" type="text" placeholder="예: 1반" style="max-width:120px"></div>
+      </div>
+      <div class="mem-block">
+        <div class="mem-hdr"><span class="mtag m2">팀원 2</span></div>
+        <div class="frow">
+          <div class="fg"><label class="fl">이름</label><input class="fi" id="ws-n2" type="text" placeholder="김철수" oninput="updateLabels()"></div>
+          <div class="fg"><label class="fl">학번</label><input class="fi" id="ws-id2" type="text" placeholder="10102"></div>
+        </div>
+      </div>
+    </div>
+    <div class="team-div"><div class="team-div-line"></div><div class="team-div-label"><i class="ti ti-users" style="font-size:11px;vertical-align:-1px;margin-right:3px"></i>2인 공동 활동지</div><div class="team-div-line"></div></div>
+    <div id="ws-questions"></div>
+    <div class="team-div"><div class="team-div-line"></div><div class="team-div-label"><i class="ti ti-writing" style="font-size:11px;vertical-align:-1px;margin-right:3px"></i>개인 소감문 (각자 작성)</div><div class="team-div-line"></div></div>
+    <div class="mem-block"><div class="mem-hdr"><span class="mtag m1" id="ref-lbl-1">팀원 1 소감문</span></div><textarea class="fta" id="ws-ref1" placeholder="수업을 통해 느낀 점, 배운 점, 더 알고 싶은 점을 자유롭게 작성하세요..."></textarea></div>
+    <div class="mem-block"><div class="mem-hdr"><span class="mtag m2" id="ref-lbl-2">팀원 2 소감문</span></div><textarea class="fta" id="ws-ref2" placeholder="수업을 통해 느낀 점, 배운 점, 더 알고 싶은 점을 자유롭게 작성하세요..."></textarea></div>
+    <div id="ws-status" class="smsg"></div>
+  </div>
+</div>
+
+<!-- STUDENT VIEWER -->
+<div id="viewer" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="stopViewer();go('home')"><i class="ti ti-arrow-left"></i> 홈</button>
+    <div><div class="tb-title">교사 화면 보기</div><div class="tb-sub" id="viewer-sub">연결 대기 중...</div></div>
+    <div class="tb-actions">
+      <button class="abtn" onclick="connectViewer()"><i class="ti ti-refresh"></i> 재연결</button>
+      <button class="abtn" onclick="toggleFullscreen('viewer-video')"><i class="ti ti-arrows-maximize"></i> 전체화면</button>
+      <button class="abtn" onclick="togglePiP()" id="pip-btn"><i class="ti ti-picture-in-picture"></i> PiP</button>
+    </div>
+  </div>
+  <div class="content" style="max-width:860px">
+    <div class="conn-status waiting" id="viewer-status">
+      <i class="ti ti-wifi-off" style="font-size:16px"></i>
+      <span id="viewer-status-text">교사가 방송을 시작하면 자동으로 연결됩니다</span>
+    </div>
+    <div class="cam-wrap">
+      <video id="viewer-video" autoplay playsinline style="width:100%;min-height:300px;background:#111"></video>
+      <div class="cam-badge off" id="viewer-badge"><i class="ti ti-wifi-off" style="font-size:11px"></i> 대기 중</div>
+    </div>
+    <div class="zoom-row">
+      <button class="zoom-btn" onclick="adjVZoom(-0.1)">−</button>
+      <span style="font-size:12px;color:var(--text2);min-width:36px;text-align:center" id="v-zoom-lbl">100%</span>
+      <button class="zoom-btn" onclick="adjVZoom(0.1)">+</button>
+      <button class="abtn" onclick="resetVZoom()" style="font-size:11px;padding:4px 10px">초기화</button>
+    </div>
+    <div style="background:var(--bg3);border-radius:var(--rad);padding:12px;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:500;margin-bottom:7px;display:flex;align-items:center;gap:6px">
+        <i class="ti ti-network" style="font-size:14px;color:var(--blue)"></i>
+        선생님 컴퓨터 IP 주소
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input class="fi" id="viewer-ip-input" type="text" placeholder="예: 192.168.1.5"
+          style="max-width:180px;font-size:13px;font-family:monospace" value="">
+        <span style="font-size:13px;color:var(--text2);font-family:monospace">:3000</span>
+        <button class="abtn p" style="font-size:12px" onclick="saveServerIPViewer()">
+          <i class="ti ti-check"></i> 저장 후 연결
+        </button>
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin-top:6px">
+        선생님이 칠판에 적어준 주소에서 숫자 부분만 입력하세요
+      </div>
+    </div>
+    <div class="info-box">
+      <strong>사용 방법</strong><br>
+      위에 선생님 IP를 입력하고 저장하면 자동으로 연결됩니다.<br>
+      PiP 버튼으로 작은 창을 띄워 활동지 작성 중에도 화면을 볼 수 있습니다.
+    </div>
+  </div>
+</div>
+
+<!-- TEACHER LOGIN -->
+<div id="teacher-login" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="go('home')"><i class="ti ti-arrow-left"></i> 홈</button>
+    <div class="tb-title">교사용 접근</div>
+  </div>
+  <div class="lw">
+    <div class="lcard">
+      <div style="font-size:32px;margin-bottom:10px"><i class="ti ti-lock"></i></div>
+      <div style="font-size:17px;font-weight:700;margin-bottom:5px">교사 인증</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:20px">교사용 비밀번호를 입력하세요</div>
+      <input class="fi" id="teacher-pw" type="password" placeholder="비밀번호" style="text-align:center;letter-spacing:.12em;margin-bottom:10px" onkeydown="if(event.key==='Enter')teacherLogin()">
+      <button class="abtn p" style="width:100%;justify-content:center;padding:9px" onclick="teacherLogin()">입장하기</button>
+      <div style="font-size:11px;color:var(--red);margin-top:8px;display:none" id="login-err">비밀번호가 올바르지 않습니다</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:12px">기본 비밀번호: 1234</div>
+    </div>
+  </div>
+</div>
+
+<!-- TEACHER DASHBOARD -->
+<div id="teacher" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="stopBroadcast();go('home')"><i class="ti ti-arrow-left"></i> 홈</button>
+    <div><div class="tb-title">교사용 관리</div></div>
+    <div class="tb-actions">
+      <button class="abtn" onclick="refreshTeacher()"><i class="ti ti-refresh"></i> 새로고침</button>
+      <button class="abtn p" onclick="saveTeacher()"><i class="ti ti-device-floppy"></i> 저장</button>
+    </div>
+  </div>
+  <div class="t-tabs">
+    <button class="t-tab active" onclick="switchTab(this,'tab-broadcast')"><i class="ti ti-video" style="font-size:13px;vertical-align:-2px"></i> 화면 방송</button>
+    <button class="t-tab" onclick="switchTab(this,'tab-overview')">제출 현황</button>
+    <button class="t-tab" onclick="switchTab(this,'tab-detail')">활동지 상세</button>
+    <button class="t-tab" onclick="switchTab(this,'tab-reflection')">소감문 현황</button>
+    <button class="t-tab" onclick="switchTab(this,'tab-seteuk')">세특 자동 완성</button>
+    <button class="t-tab" onclick="switchTab(this,'tab-qmgmt')">질문 관리</button>
+    <button class="t-tab" onclick="switchTab(this,'tab-install')"><i class="ti ti-download" style="font-size:13px;vertical-align:-2px"></i> 설치 안내</button>
+  </div>
+
+  <!-- 화면 방송 -->
+  <div id="tab-broadcast" class="t-content">
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px"><i class="ti ti-video" style="color:var(--red);font-size:15px;vertical-align:-2px;margin-right:6px"></i>실물화상기 (WebRTC 실시간 방송)</div>
+      <div class="info-box">
+        <strong>사용 방법</strong><br>
+        1. 아래에 선생님 컴퓨터 IP를 입력하고 저장하세요 (시작.bat 실행 시 검은 창에 표시).<br>
+        2. '방송 시작'을 눌러 카메라 또는 화면 공유를 선택하세요.<br>
+        3. 학생들이 '교사 화면 보기'에 접속하면 자동으로 연결됩니다.
+      </div>
+      <div style="background:var(--bg3);border-radius:var(--rad);padding:14px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:500;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+          <i class="ti ti-network" style="font-size:14px;color:var(--blue)"></i>
+          선생님 컴퓨터 IP 주소 설정
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input class="fi" id="server-ip-input" type="text" placeholder="예: 192.168.1.5"
+            style="max-width:180px;font-size:13px;font-family:monospace"
+            value="">
+          <span style="font-size:13px;color:var(--text2);font-family:monospace">:3000</span>
+          <button class="abtn p" style="font-size:12px" onclick="saveServerIP()">
+            <i class="ti ti-check"></i> 저장
+          </button>
+          <span id="ip-saved-msg" style="font-size:12px;color:var(--green);display:none">
+            <i class="ti ti-circle-check" style="font-size:13px;vertical-align:-2px"></i> 저장됨
+          </span>
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-top:7px;line-height:1.6">
+          시작.bat 실행 후 검은 창에 표시되는 <code style="background:var(--bg2);padding:1px 5px;border-radius:3px">학생 주소 → http://192.168.X.X:3000</code> 에서 숫자 부분만 입력
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+        <button class="abtn green" id="bc-start" onclick="startBroadcast()"><i class="ti ti-video"></i> 방송 시작</button>
+        <button class="abtn red" id="bc-stop" onclick="stopBroadcast()" style="display:none"><i class="ti ti-video-off"></i> 방송 종료</button>
+        <select class="fi" id="cam-src" style="max-width:180px;font-size:12px">
+          <option value="camera">웹캠 (카메라)</option>
+          <option value="screen">화면 공유 (스크린)</option>
+        </select>
+        <button class="abtn" onclick="toggleMirror()" style="font-size:11px"><i class="ti ti-flip-horizontal"></i> 반전</button>
+        <span id="viewer-count-badge" style="font-size:12px;color:var(--text2)"><i class="ti ti-users" style="font-size:13px;vertical-align:-2px"></i> 시청자 <strong id="viewer-count">0</strong>명</span>
+      </div>
+      <div id="bc-status" class="smsg"></div>
+    </div>
+    <div class="cam-wrap">
+      <video id="teacher-video" autoplay playsinline muted style="width:100%;min-height:320px;background:#111"></video>
+      <div class="cam-badge off" id="teacher-badge"><i class="ti ti-video-off" style="font-size:11px"></i> 대기 중</div>
+    </div>
+    <div class="zoom-row">
+      <button class="zoom-btn" onclick="adjZoom(-0.1)">−</button>
+      <span style="font-size:12px;color:var(--text2);min-width:36px;text-align:center" id="zoom-lbl">100%</span>
+      <button class="zoom-btn" onclick="adjZoom(0.1)">+</button>
+      <button class="abtn" onclick="resetZoom()" style="font-size:11px;padding:4px 10px">초기화</button>
+      <button class="abtn" onclick="toggleFullscreen('teacher-video')" style="font-size:11px"><i class="ti ti-arrows-maximize"></i> 전체화면</button>
+      <button class="abtn" onclick="takeSnapshot()" style="font-size:11px"><i class="ti ti-camera"></i> 스냅샷</button>
+    </div>
+    <canvas id="snap-canvas" style="display:none"></canvas>
+    <div id="snap-area"></div>
+  </div>
+
+  <!-- 제출 현황 -->
+  <div id="tab-overview" class="t-content hidden">
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">제출 팀 수</div><div class="stat-val ok" id="st-teams">0</div></div>
+      <div class="stat-card"><div class="stat-label">활동지 제출 인원</div><div class="stat-val ok" id="st-act">0</div></div>
+      <div class="stat-card"><div class="stat-label">소감문 (팀원1)</div><div class="stat-val ok" id="st-r1">0</div></div>
+      <div class="stat-card"><div class="stat-label">소감문 (팀원2)</div><div class="stat-val ok" id="st-r2">0</div></div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="stbl">
+        <colgroup><col width="5%"><col width="13%"><col width="13%"><col width="12%"><col width="12%"><col width="9%"><col width="12%"><col width="24%"></colgroup>
+        <thead><tr><th>번호</th><th>팀원1</th><th>팀원2</th><th>학번1</th><th>학번2</th><th>반</th><th>활동지</th><th>소감문</th></tr></thead>
+        <tbody id="overview-body"></tbody>
+      </table>
+    </div>
+    <div class="empty-st" id="overview-empty" style="display:none">아직 제출된 활동지가 없습니다</div>
+  </div>
+
+  <!-- 활동지 상세 -->
+  <div id="tab-detail" class="t-content hidden">
+    <div style="margin-bottom:14px"><label class="fl" style="margin-bottom:5px;display:block">팀 선택</label><select id="team-sel" class="fi" style="max-width:260px" onchange="showTeamDetail()"><option value="">-- 팀을 선택하세요 --</option></select></div>
+    <div id="team-detail"><div class="empty-st">팀을 선택하면 활동지 내용이 표시됩니다</div></div>
+  </div>
+
+  <!-- 소감문 현황 -->
+  <div id="tab-reflection" class="t-content hidden">
+    <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="abtn p" id="rf-all" onclick="filterRf('all',this)" style="font-size:11px">전체</button>
+      <button class="abtn" id="rf-m1" onclick="filterRf('m1',this)" style="font-size:11px">팀원1만</button>
+      <button class="abtn" id="rf-m2" onclick="filterRf('m2',this)" style="font-size:11px">팀원2만</button>
+      <button class="abtn" id="rf-none" onclick="filterRf('none',this)" style="font-size:11px">미제출 포함</button>
+    </div>
+    <div id="rf-list"></div>
+    <div class="empty-st" id="rf-empty" style="display:none">제출된 소감문이 없습니다</div>
+  </div>
+
+  <!-- 세특 -->
+  <div id="tab-seteuk" class="t-content hidden">
+    <div style="font-size:12px;color:var(--text2);margin-bottom:9px">AI를 선택하고 각 팀원별 '생성' 버튼을 누르세요</div>
+    <div class="ai-sel">
+      <button class="ai-chip sel" onclick="selAI('claude',this)">Claude</button>
+      <button class="ai-chip" onclick="selAI('gemini',this)">Gemini</button>
+      <button class="ai-chip" onclick="selAI('gpt',this)">ChatGPT</button>
+    </div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:12px" id="ai-note"></div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="excel-btn" onclick="dlExcel()"><i class="ti ti-file-spreadsheet" style="font-size:15px"></i> 전체 엑셀 다운로드</button></div>
+    <div id="sk-list"></div>
+    <div class="empty-st" id="sk-empty" style="display:none">제출된 활동지가 있어야 세특을 생성할 수 있습니다</div>
+  </div>
+
+  <!-- 질문 관리 -->
+  <div id="tab-qmgmt" class="t-content hidden">
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;margin-bottom:4px">공동 활동지 질문 편집</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:12px">저장하면 학생 활동지에 즉시 반영됩니다.</div>
+      <div id="q-ed-list"></div>
+      <button class="add-q" onclick="addQ()"><i class="ti ti-plus"></i> 질문 추가</button>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="abtn p" onclick="saveQs()"><i class="ti ti-device-floppy"></i> 저장</button>
+        <button class="abtn" onclick="resetQs()"><i class="ti ti-refresh"></i> 초기화</button>
+      </div>
+      <div id="q-save-st" class="smsg"></div>
+    </div>
+  </div>
+
+  <!-- 설치 안내 탭 -->
+  <div id="tab-install" class="t-content hidden">
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+        <i class="ti ti-download" style="font-size:16px;color:var(--blue)"></i>
+        프로그램 설치 파일 다운로드
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.8">
+        아래 파일 3개를 모두 같은 폴더에 저장하세요.<br>
+        바탕화면에 <strong>수업프로그램</strong> 폴더를 만들고 그 안에 넣는 것을 권장합니다.
+      </div>
+      <div style="display:grid;gap:10px">
+        <div style="background:var(--bg3);border-radius:var(--rad);padding:14px;display:flex;align-items:center;gap:14px">
+          <div style="width:42px;height:42px;background:#FAEEDA;color:#854F0B;border-radius:var(--rad);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">
+            <i class="ti ti-terminal"></i>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700">시작.bat</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px">더블클릭 한 번으로 서버 실행 — 핵심 파일</div>
+          </div>
+          <button class="abtn p" style="flex-shrink:0;font-size:12px" onclick="dlFile('시작.bat','QGVjaG8gb2ZmCmNoY3AgNjUwMDEgPiBudWwKdGl0bGUg7LK07JyhwrfsoJXrs7Qg7Jy17ZWpIOyImOyXhSDshJzrsoQKCjo6IOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgAo6OiAg7J20IO2MjOydvOydtCDsnojripQg7Y+0642U66W8IOyekeyXhSDtj7TrjZTroZwg7ISk7KCVCjo6IOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgApjZCAvZCAiJX5kcDAiCgplY2hvLgplY2hvICDilIzilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilJAKZWNobyAg4pSCICAgICDssrTsnKHCt+ygleuztCDsnLXtlakg7IiY7JeFIO2UhOuhnOq3uOueqCAgICAgICAg4pSCCmVjaG8gIOKUlOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUmAplY2hvLgoKOjog4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACjo6ICAx64uo6rOEOiBOb2RlLmpzIOywvuq4sAo6OiAg7Jqw7ISg7Iic7JyEOiDtj6zthLDruJQobm9kZe2PtOuNlCkgPiDsi5zsiqTthZwg7ISk7LmYCjo6IOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgApzZXQgTk9ERV9FWEU9Cgo6OiDtj6zthLDruJQgTm9kZS5qcyDtmZXsnbggKOydtCDtj7TrjZQg7JWI7J2YIG5vZGUg7Y+0642UKQppZiBleGlzdCAiJX5kcDBub2RlXG5vZGUuZXhlIiAoCiAgICBzZXQgTk9ERV9FWEU9JX5kcDBub2RlXG5vZGUuZXhlCiAgICBzZXQgTlBNX0NNRD0lfmRwMG5vZGVcbnBtLmNtZAogICAgZWNobyAgW+2ZleyduF0g7Y+s7YSw67iUIE5vZGUuanMg7IKs7JqpCiAgICBnb3RvIDpDSEVDS19NT0RVTEVTCikKCjo6IOyLnOyKpO2FnOyXkCDshKTsuZjrkJwgTm9kZS5qcyDtmZXsnbgKd2hlcmUgbm9kZSA+bnVsIDI+JjEKaWYgJWVycm9ybGV2ZWwlIGVxdSAwICgKICAgIHNldCBOT0RFX0VYRT1ub2RlCiAgICBzZXQgTlBNX0NNRD1ucG0KICAgIGVjaG8gIFvtmZXsnbhdIOyLnOyKpO2FnCBOb2RlLmpzIOyCrOyaqQogICAgZ290byA6Q0hFQ0tfTU9EVUxFUwopCgo6OiDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAKOjogIDLri6jqs4Q6IE5vZGUuanMg7Y+s7YSw67iUIOyekOuPmSDri6TsmrTroZzrk5wKOjog4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACmVjaG8gIE5vZGUuanPqsIAg7JeG7Iq164uI64ukLiDtj6zthLDruJQg67KE7KCE7J2EIOyekOuPmeycvOuhnCDrsJvqsqDsirXri4jri6QuCmVjaG8gICjsnbjthLDrhLcg7Jew6rKw7J20IO2VhOyalO2VqeuLiOuLpCAtIOy1nOy0iCAx7ZqM66eMKQplY2hvLgoKOjogUG93ZXJTaGVsbOuhnCDri6TsmrTroZzrk5wKc2V0IE5PREVfVVJMPWh0dHBzOi8vbm9kZWpzLm9yZy9kaXN0L3YyMC4xMS4xL25vZGUtdjIwLjExLjEtd2luLXg2NC56aXAKc2V0IFpJUF9GSUxFPSV+ZHAwbm9kZV9kb3dubG9hZC56aXAKc2V0IE5PREVfRElSPSV+ZHAwbm9kZV90ZW1wCgplY2hvICDri6TsmrTroZzrk5wg7KSRLi4uICjslb0gMzBNQiwg7J6g7IucIOq4sOuLpOugpOyjvOyEuOyalCkKCnBvd2Vyc2hlbGwgLU5vUHJvZmlsZSAtRXhlY3V0aW9uUG9saWN5IEJ5cGFzcyAtQ29tbWFuZCBeCiAgInRyeSB7IFtOZXQuU2VydmljZVBvaW50TWFuYWdlcl06OlNlY3VyaXR5UHJvdG9jb2wgPSAnVGxzMTInOyBJbnZva2UtV2ViUmVxdWVzdCAtVXJpICclTk9ERV9VUkwlJyAtT3V0RmlsZSAnJVpJUF9GSUxFJScgLVVzZUJhc2ljUGFyc2luZzsgV3JpdGUtSG9zdCAn64uk7Jq066Gc65OcIOyZhOujjCcgfSBjYXRjaCB7IFdyaXRlLUhvc3QgJ+yLpO2MqDonICRfLkV4Y2VwdGlvbi5NZXNzYWdlOyBleGl0IDEgfSIKCmlmICVlcnJvcmxldmVsJSBuZXEgMCAoCiAgICBlY2hvLgogICAgZWNobyAgW+yYpOulmF0g64uk7Jq066Gc65Oc7JeQIOyLpO2MqO2WiOyKteuLiOuLpC4KICAgIGVjaG8uCiAgICBlY2hvICDsiJjrj5kg7ISk7LmYIOuwqeuylToKICAgIGVjaG8gIDEuIOu4jOudvOyasOyggOyXkOyEnCBodHRwczovL25vZGVqcy5vcmcg7KCR7IaNCiAgICBlY2hvICAyLiBMVFMg67KE7KCEIOuLpOyatOuhnOuTnCDrsI8g7ISk7LmYCiAgICBlY2hvICAzLiDshKTsuZgg7ZuEIOydtCDtjIzsnbzsnYQg64uk7IucIOyLpO2WiQogICAgZWNoby4KICAgIHBhdXNlCiAgICBleGl0IC9iIDEKKQoKZWNobyAg7JWV7LaVIO2VtOygnCDspJEuLi4KcG93ZXJzaGVsbCAtTm9Qcm9maWxlIC1FeGVjdXRpb25Qb2xpY3kgQnlwYXNzIC1Db21tYW5kIF4KICAiRXhwYW5kLUFyY2hpdmUgLVBhdGggJyVaSVBfRklMRSUnIC1EZXN0aW5hdGlvblBhdGggJyVOT0RFX0RJUiUnIC1Gb3JjZSIKCjo6IOyVley2lSDtlbTsoJzrkJwg7Y+0642U66W8IG5vZGUg7Y+0642U66GcIOydtOuPmQpmb3IgL2QgJSVpIGluICgiJU5PREVfRElSJVxub2RlLXYqIikgZG8gKAogICAgbW92ZSAiJSVpIiAiJX5kcDBub2RlIiA+bnVsCikKcm1kaXIgL3MgL3EgIiVOT0RFX0RJUiUiIDI+bnVsCmRlbCAiJVpJUF9GSUxFJSIgMj5udWwKCmlmIGV4aXN0ICIlfmRwMG5vZGVcbm9kZS5leGUiICgKICAgIHNldCBOT0RFX0VYRT0lfmRwMG5vZGVcbm9kZS5leGUKICAgIHNldCBOUE1fQ01EPSV+ZHAwbm9kZVxucG0uY21kCiAgICBlY2hvICBOb2RlLmpzIOykgOu5hCDsmYTro4whCiAgICBlY2hvLgopIGVsc2UgKAogICAgZWNobyAgW+yYpOulmF0gTm9kZS5qcyDshKTsoJXsl5Ag7Iuk7Yyo7ZaI7Iq164uI64ukLiDsiJjrj5nsnLzroZwg7ISk7LmY7ZW07KO87IS47JqULgogICAgcGF1c2UKICAgIGV4aXQgL2IgMQopCgo6OiDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAKOjogIDPri6jqs4Q6IO2MqO2CpOyngCDshKTsuZggKOy1nOy0iCAx7ZqMKQo6OiDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAKOkNIRUNLX01PRFVMRVMKaWYgbm90IGV4aXN0ICIlfmRwMG5vZGVfbW9kdWxlcyIgKAogICAgZWNobyAg7ZWE7JqU7ZWcIO2MqO2CpOyngOulvCDshKTsuZjtlZjripQg7KSRLi4uCiAgICAiJU5QTV9DTUQlIiBpbnN0YWxsIC0tc2lsZW50IDI+bnVsIHx8ICIlTk9ERV9FWEUlIiAiJX5kcDBub2RlXG5vZGVfbW9kdWxlc1xucG1cYmluXG5wbS1jbGkuanMiIGluc3RhbGwgLS1zaWxlbnQKICAgIGVjaG8gIO2MqO2CpOyngCDshKTsuZgg7JmE66OMIQogICAgZWNoby4KKQoKOjog4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACjo6ICA064uo6rOEOiDshJzrsoQg7Iuk7ZaJCjo6IOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgAplY2hvICDshJzrsoTrpbwg7Iuc7J6R7ZWp64uI64ukLi4uCmVjaG8gICjsnbQg7LC97J2EIOuLq+ycvOuptCDshJzrsoTqsIAg7KKF66OM65Cp64uI64ukKQplY2hvLgoiJU5PREVfRVhFJSIgIiV+ZHAwc2VydmVyLmpzIgoKZWNoby4KZWNobyAg7ISc67KE6rCAIOyiheujjOuQmOyXiOyKteuLiOuLpC4KcGF1c2UK')">
+            <i class="ti ti-download"></i> 다운로드
+          </button>
+        </div>
+        <div style="background:var(--bg3);border-radius:var(--rad);padding:14px;display:flex;align-items:center;gap:14px">
+          <div style="width:42px;height:42px;background:#E6F1FB;color:#185FA5;border-radius:var(--rad);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">
+            <i class="ti ti-server"></i>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700">server.js</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px">WebRTC 시그널링 서버 — 학생 연결 담당</div>
+          </div>
+          <button class="abtn p" style="flex-shrink:0;font-size:12px" onclick="dlFile('server.js','Ly8g4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACi8vICDssrTsnKHCt+ygleuztCDsnLXtlakg7IiY7JeFIFdlYlJUQyDsi5zqt7jrhJDrp4Eg7ISc67KECi8vIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgApjb25zdCBodHRwID0gcmVxdWlyZSgnaHR0cCcpOwpjb25zdCBmcyAgID0gcmVxdWlyZSgnZnMnKTsKY29uc3QgcGF0aCA9IHJlcXVpcmUoJ3BhdGgnKTsKY29uc3Qgb3MgICA9IHJlcXVpcmUoJ29zJyk7CgpsZXQgV2ViU29ja2V0U2VydmVyOwp0cnkgewogIFdlYlNvY2tldFNlcnZlciA9IHJlcXVpcmUoJ3dzJykuV2ViU29ja2V0U2VydmVyOwp9IGNhdGNoKGUpIHsKICBjb25zb2xlLmVycm9yKCdcblvsmKTrpZhdIHdzIO2MqO2CpOyngOqwgCDsl4bsirXri4jri6QuIOyLnOyekS5iYXTsnYQg64uk7IucIOyLpO2Wie2VtOyjvOyEuOyalC5cbicpOwogIHByb2Nlc3MuZXhpdCgxKTsKfQoKY29uc3QgUE9SVCA9IDMwMDA7CgpmdW5jdGlvbiBnZXRMb2NhbElQKCkgewogIGNvbnN0IG5ldHMgPSBvcy5uZXR3b3JrSW50ZXJmYWNlcygpOwogIGZvciAoY29uc3QgbmFtZSBvZiBPYmplY3Qua2V5cyhuZXRzKSkgewogICAgZm9yIChjb25zdCBuZXQgb2YgbmV0c1tuYW1lXSkgewogICAgICBpZiAobmV0LmZhbWlseSA9PT0gJ0lQdjQnICYmICFuZXQuaW50ZXJuYWwpIHJldHVybiBuZXQuYWRkcmVzczsKICAgIH0KICB9CiAgcmV0dXJuICdsb2NhbGhvc3QnOwp9Cgpjb25zdCBNSU1FID0gewogICcuaHRtbCc6ICd0ZXh0L2h0bWw7IGNoYXJzZXQ9dXRmLTgnLAogICcuanMnOiAgICdhcHBsaWNhdGlvbi9qYXZhc2NyaXB0OyBjaGFyc2V0PXV0Zi04JywKICAnLmNzcyc6ICAndGV4dC9jc3M7IGNoYXJzZXQ9dXRmLTgnLAogICcuanNvbic6ICdhcHBsaWNhdGlvbi9qc29uJywKICAnLnBuZyc6ICAnaW1hZ2UvcG5nJywKICAnLmpwZyc6ICAnaW1hZ2UvanBlZycsCn07Cgpjb25zdCBzZXJ2ZXIgPSBodHRwLmNyZWF0ZVNlcnZlcigocmVxLCByZXMpID0+IHsKICByZXMuc2V0SGVhZGVyKCdBY2Nlc3MtQ29udHJvbC1BbGxvdy1PcmlnaW4nLCAnKicpOwogIHJlcy5zZXRIZWFkZXIoJ0FjY2Vzcy1Db250cm9sLUFsbG93LU1ldGhvZHMnLCAnR0VULCBQT1NULCBPUFRJT05TJyk7CiAgcmVzLnNldEhlYWRlcignQWNjZXNzLUNvbnRyb2wtQWxsb3ctSGVhZGVycycsICdDb250ZW50LVR5cGUsIEF1dGhvcml6YXRpb24nKTsKICBpZiAocmVxLm1ldGhvZCA9PT0gJ09QVElPTlMnKSB7IHJlcy53cml0ZUhlYWQoMjA0KTsgcmVzLmVuZCgpOyByZXR1cm47IH0KCiAgLy8gQ2xhdWRlIEFQSSDtlITroZ3si5wKICBpZiAocmVxLm1ldGhvZCA9PT0gJ1BPU1QnICYmIHJlcS51cmwgPT09ICcvYXBpL2NsYXVkZScpIHsKICAgIGxldCBib2R5ID0gJyc7CiAgICByZXEub24oJ2RhdGEnLCBkID0+IGJvZHkgKz0gZCk7CiAgICByZXEub24oJ2VuZCcsICgpID0+IHsKICAgICAgdHJ5IHsKICAgICAgICBjb25zdCB7IHByb21wdCB9ID0gSlNPTi5wYXJzZShib2R5KTsKICAgICAgICBjb25zdCBodHRwcyA9IHJlcXVpcmUoJ2h0dHBzJyk7CiAgICAgICAgY29uc3QgcGF5bG9hZCA9IEpTT04uc3RyaW5naWZ5KHsKICAgICAgICAgIG1vZGVsOiAnY2xhdWRlLXNvbm5ldC00LTIwMjUwNTE0JywKICAgICAgICAgIG1heF90b2tlbnM6IDEwMDAsCiAgICAgICAgICBtZXNzYWdlczogW3sgcm9sZTogJ3VzZXInLCBjb250ZW50OiBwcm9tcHQgfV0KICAgICAgICB9KTsKICAgICAgICBjb25zdCBhcGlLZXkgPSBwcm9jZXNzLmVudi5BTlRIUk9QSUNfQVBJX0tFWSB8fCAnWU9VUl9BUElfS0VZX0hFUkUnOwogICAgICAgIGNvbnN0IG9wdGlvbnMgPSB7CiAgICAgICAgICBob3N0bmFtZTogJ2FwaS5hbnRocm9waWMuY29tJywKICAgICAgICAgIHBhdGg6ICcvdjEvbWVzc2FnZXMnLAogICAgICAgICAgbWV0aG9kOiAnUE9TVCcsCiAgICAgICAgICBoZWFkZXJzOiB7CiAgICAgICAgICAgICdDb250ZW50LVR5cGUnOiAnYXBwbGljYXRpb24vanNvbicsCiAgICAgICAgICAgICd4LWFwaS1rZXknOiBhcGlLZXksCiAgICAgICAgICAgICdhbnRocm9waWMtdmVyc2lvbic6ICcyMDIzLTA2LTAxJywKICAgICAgICAgICAgJ0NvbnRlbnQtTGVuZ3RoJzogQnVmZmVyLmJ5dGVMZW5ndGgocGF5bG9hZCkKICAgICAgICAgIH0KICAgICAgICB9OwogICAgICAgIGNvbnN0IGFwaVJlcSA9IGh0dHBzLnJlcXVlc3Qob3B0aW9ucywgYXBpUmVzID0+IHsKICAgICAgICAgIGxldCBkYXRhID0gJyc7CiAgICAgICAgICBhcGlSZXMub24oJ2RhdGEnLCBkID0+IGRhdGEgKz0gZCk7CiAgICAgICAgICBhcGlSZXMub24oJ2VuZCcsICgpID0+IHsKICAgICAgICAgICAgdHJ5IHsKICAgICAgICAgICAgICBjb25zdCByZXN1bHQgPSBKU09OLnBhcnNlKGRhdGEpOwogICAgICAgICAgICAgIGNvbnN0IHRleHQgPSByZXN1bHQuY29udGVudD8uWzBdPy50ZXh0IHx8ICfsg53shLEg7Iuk7YyoJzsKICAgICAgICAgICAgICByZXMud3JpdGVIZWFkKDIwMCwgeyAnQ29udGVudC1UeXBlJzogJ2FwcGxpY2F0aW9uL2pzb24nIH0pOwogICAgICAgICAgICAgIHJlcy5lbmQoSlNPTi5zdHJpbmdpZnkoeyB0ZXh0IH0pKTsKICAgICAgICAgICAgfSBjYXRjaChlKSB7CiAgICAgICAgICAgICAgcmVzLndyaXRlSGVhZCg1MDApOyByZXMuZW5kKEpTT04uc3RyaW5naWZ5KHsgdGV4dDogJ0FQSSDsmKTrpZgnIH0pKTsKICAgICAgICAgICAgfQogICAgICAgICAgfSk7CiAgICAgICAgfSk7CiAgICAgICAgYXBpUmVxLm9uKCdlcnJvcicsICgpID0+IHsgcmVzLndyaXRlSGVhZCg1MDApOyByZXMuZW5kKEpTT04uc3RyaW5naWZ5KHsgdGV4dDogJ0FQSSDsl7DqsrAg7Iuk7YyoJyB9KSk7IH0pOwogICAgICAgIGFwaVJlcS53cml0ZShwYXlsb2FkKTsKICAgICAgICBhcGlSZXEuZW5kKCk7CiAgICAgIH0gY2F0Y2goZSkgewogICAgICAgIHJlcy53cml0ZUhlYWQoNDAwKTsgcmVzLmVuZChKU09OLnN0cmluZ2lmeSh7IHRleHQ6ICfsmpTssq0g7Jik66WYJyB9KSk7CiAgICAgIH0KICAgIH0pOwogICAgcmV0dXJuOwogIH0KCiAgY29uc3QgdXJsUGF0aCA9IHJlcS51cmwgPT09ICcvJyA/ICcvaW5kZXguaHRtbCcgOiByZXEudXJsLnNwbGl0KCc/JylbMF07CiAgY29uc3QgZmlsZVBhdGggPSBwYXRoLmpvaW4oX19kaXJuYW1lLCB1cmxQYXRoKTsKICBpZiAoIWZpbGVQYXRoLnN0YXJ0c1dpdGgoX19kaXJuYW1lKSkgeyByZXMud3JpdGVIZWFkKDQwMyk7IHJlcy5lbmQoJ0ZvcmJpZGRlbicpOyByZXR1cm47IH0KCiAgZnMucmVhZEZpbGUoZmlsZVBhdGgsIChlcnIsIGRhdGEpID0+IHsKICAgIGlmIChlcnIpIHsgcmVzLndyaXRlSGVhZCg0MDQpOyByZXMuZW5kKCdOb3QgZm91bmQnKTsgcmV0dXJuOyB9CiAgICBjb25zdCBleHQgPSBwYXRoLmV4dG5hbWUoZmlsZVBhdGgpOwogICAgcmVzLndyaXRlSGVhZCgyMDAsIHsgJ0NvbnRlbnQtVHlwZSc6IE1JTUVbZXh0XSB8fCAndGV4dC9wbGFpbjsgY2hhcnNldD11dGYtOCcgfSk7CiAgICByZXMuZW5kKGRhdGEpOwogIH0pOwp9KTsKCi8vIFdlYlNvY2tldCDsi5zqt7jrhJDrp4EKY29uc3Qgd3NzID0gbmV3IFdlYlNvY2tldFNlcnZlcih7IHNlcnZlciB9KTsKbGV0IGJyb2FkY2FzdGVyID0gbnVsbDsKY29uc3Qgdmlld2VycyA9IG5ldyBNYXAoKTsKCmZ1bmN0aW9uIHNlbmRWaWV3ZXJDb3VudCgpIHsKICBpZiAoYnJvYWRjYXN0ZXI/LnJlYWR5U3RhdGUgPT09IDEpCiAgICBicm9hZGNhc3Rlci5zZW5kKEpTT04uc3RyaW5naWZ5KHsgdHlwZTogJ3ZpZXdlci1jb3VudCcsIGNvdW50OiB2aWV3ZXJzLnNpemUgfSkpOwp9Cgp3c3Mub24oJ2Nvbm5lY3Rpb24nLCB3cyA9PiB7CiAgd3Mub24oJ21lc3NhZ2UnLCByYXcgPT4gewogICAgbGV0IG1zZzsgdHJ5IHsgbXNnID0gSlNPTi5wYXJzZShyYXcpOyB9IGNhdGNoIHsgcmV0dXJuOyB9CiAgICBzd2l0Y2ggKG1zZy50eXBlKSB7CiAgICAgIGNhc2UgJ3JlZ2lzdGVyLWJyb2FkY2FzdGVyJzoKICAgICAgICBicm9hZGNhc3RlciA9IHdzOyB3cy5yb2xlID0gJ2Jyb2FkY2FzdGVyJzsKICAgICAgICB3cy5zZW5kKEpTT04uc3RyaW5naWZ5KHsgdHlwZTogJ2Jyb2FkY2FzdGVyLXJlYWR5JyB9KSk7CiAgICAgICAgdmlld2Vycy5mb3JFYWNoKHYgPT4geyBpZiAodi5yZWFkeVN0YXRlPT09MSkgdi5zZW5kKEpTT04uc3RyaW5naWZ5KHsgdHlwZTonYnJvYWRjYXN0ZXItam9pbmVkJyB9KSk7IH0pOwogICAgICAgIGNvbnNvbGUubG9nKGAgIFvrsKnshqEg7Iuc7J6RXSDrjIDquLAg7Iuc7LKt7J6QICR7dmlld2Vycy5zaXplfeuqhSDslYzrprxgKTsKICAgICAgICBicmVhazsKICAgICAgY2FzZSAncmVnaXN0ZXItdmlld2VyJzoKICAgICAgICB3cy5yb2xlPSd2aWV3ZXInOyB3cy52aWV3ZXJJZD1tc2cudmlld2VySWQ7CiAgICAgICAgaWYgKG1zZy52aWV3ZXJJZCkgdmlld2Vycy5zZXQobXNnLnZpZXdlcklkLCB3cyk7CiAgICAgICAgd3Muc2VuZChKU09OLnN0cmluZ2lmeShicm9hZGNhc3Rlcj8ucmVhZHlTdGF0ZT09PTEgPyB7IHR5cGU6J2Jyb2FkY2FzdGVyLWpvaW5lZCcgfSA6IHsgdHlwZTonbm8tYnJvYWRjYXN0ZXInIH0pKTsKICAgICAgICBzZW5kVmlld2VyQ291bnQoKTsKICAgICAgICBjb25zb2xlLmxvZyhgICBb7KCR7IaNXSDsi5zssq3snpAgJHt2aWV3ZXJzLnNpemV966qFYCk7CiAgICAgICAgYnJlYWs7CiAgICAgIGNhc2UgJ3JlcXVlc3Qtb2ZmZXInOgogICAgICAgIGlmIChicm9hZGNhc3Rlcj8ucmVhZHlTdGF0ZT09PTEpIGJyb2FkY2FzdGVyLnNlbmQoSlNPTi5zdHJpbmdpZnkoeyB0eXBlOiduZXctdmlld2VyJywgdmlld2VySWQ6d3Mudmlld2VySWQgfSkpOwogICAgICAgIGJyZWFrOwogICAgICBjYXNlICdvZmZlcic6CiAgICAgICAgaWYgKG1zZy52aWV3ZXJJZCkgeyBjb25zdCB2PXZpZXdlcnMuZ2V0KG1zZy52aWV3ZXJJZCk7IGlmKHY/LnJlYWR5U3RhdGU9PT0xKSB2LnNlbmQoSlNPTi5zdHJpbmdpZnkobXNnKSk7IH0KICAgICAgICBicmVhazsKICAgICAgY2FzZSAnYW5zd2VyJzoKICAgICAgICBpZiAoYnJvYWRjYXN0ZXI/LnJlYWR5U3RhdGU9PT0xKSBicm9hZGNhc3Rlci5zZW5kKEpTT04uc3RyaW5naWZ5KHsgLi4ubXNnLCB2aWV3ZXJJZDp3cy52aWV3ZXJJZCB9KSk7CiAgICAgICAgYnJlYWs7CiAgICAgIGNhc2UgJ2ljZS1jYW5kaWRhdGUnOgogICAgICAgIGlmICh3cy5yb2xlPT09J2Jyb2FkY2FzdGVyJykgewogICAgICAgICAgY29uc3Qgdj12aWV3ZXJzLmdldChtc2cudmlld2VySWQpOyBpZih2Py5yZWFkeVN0YXRlPT09MSkgdi5zZW5kKEpTT04uc3RyaW5naWZ5KG1zZykpOwogICAgICAgIH0gZWxzZSB7CiAgICAgICAgICBpZiAoYnJvYWRjYXN0ZXI/LnJlYWR5U3RhdGU9PT0xKSBicm9hZGNhc3Rlci5zZW5kKEpTT04uc3RyaW5naWZ5KHsgLi4ubXNnLCB2aWV3ZXJJZDp3cy52aWV3ZXJJZCB9KSk7CiAgICAgICAgfQogICAgICAgIGJyZWFrOwogICAgfQogIH0pOwogIHdzLm9uKCdjbG9zZScsICgpID0+IHsKICAgIGlmICh3cy5yb2xlPT09J2Jyb2FkY2FzdGVyJykgewogICAgICBicm9hZGNhc3Rlcj1udWxsOyBjb25zb2xlLmxvZygnICBb67Cp7IahIOyiheujjF0nKTsKICAgICAgdmlld2Vycy5mb3JFYWNoKHYgPT4geyBpZih2LnJlYWR5U3RhdGU9PT0xKSB2LnNlbmQoSlNPTi5zdHJpbmdpZnkoeyB0eXBlOidicm9hZGNhc3Rlci1sZWZ0JyB9KSk7IH0pOwogICAgfSBlbHNlIGlmICh3cy52aWV3ZXJJZCkgewogICAgICB2aWV3ZXJzLmRlbGV0ZSh3cy52aWV3ZXJJZCk7IHNlbmRWaWV3ZXJDb3VudCgpOwogICAgICBjb25zb2xlLmxvZyhgICBb7Ye07J6lXSDrgqjsnYAg7Iuc7LKt7J6QICR7dmlld2Vycy5zaXplfeuqhWApOwogICAgfQogIH0pOwogIHdzLm9uKCdlcnJvcicsICgpPT57fSk7Cn0pOwoKc2VydmVyLmxpc3RlbihQT1JULCAnMC4wLjAuMCcsICgpID0+IHsKICBjb25zdCBpcCA9IGdldExvY2FsSVAoKTsKICBjb25zb2xlLmxvZygnJyk7CiAgY29uc29sZS5sb2coJyAg4pSM4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSQJyk7CiAgY29uc29sZS5sb2coJyAg4pSCICAgICAg7LK07JyhwrfsoJXrs7Qg7Jy17ZWpIOyImOyXhSDshJzrsoQg7Iuk7ZaJIOykkSAg4pyTICAgIOKUgicpOwogIGNvbnNvbGUubG9nKCcgIOKUnOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUpCcpOwogIGNvbnNvbGUubG9nKGAgIOKUgiAg6rWQ7IKsIOyjvOyGjCAg4oaSICBodHRwOi8vbG9jYWxob3N0OiR7UE9SVH0gICAgICAgICDilIJgKTsKICBjb25zb2xlLmxvZygnICDilJzilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilKQnKTsKICBjb25zb2xlLmxvZyhgICDilIIgIO2VmeyDnSDso7zshowgIOKGkiAgaHR0cDovLyR7aXB9OiR7UE9SVH0gICAgICAg4pSCYCk7CiAgY29uc29sZS5sb2coJyAg4pSCICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg4pSCJyk7CiAgY29uc29sZS5sb2coJyAg4pSCICDimIUg7JyEIO2VmeyDnSDso7zshozrpbwg7Lmg7YyQ7JeQIOyggeyWtOyjvOyEuOyalCDimIUgICAgIOKUgicpOwogIGNvbnNvbGUubG9nKCcgIOKUnOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUpCcpOwogIGNvbnNvbGUubG9nKCcgIOKUgiAg7KKF66OMOiDsnbQg7LC97JeQ7IScIEN0cmwrQyAgICAgICAgICAgICAgICAgICAgIOKUgicpOwogIGNvbnNvbGUubG9nKCcgIOKUlOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUmCcpOwogIGNvbnNvbGUubG9nKCcnKTsKICB0cnkgeyByZXF1aXJlKCdjaGlsZF9wcm9jZXNzJykuZXhlYyhgc3RhcnQgaHR0cDovL2xvY2FsaG9zdDoke1BPUlR9YCk7IH0gY2F0Y2goZSkge30KfSk7Cg==')">
+            <i class="ti ti-download"></i> 다운로드
+          </button>
+        </div>
+        <div style="background:var(--bg3);border-radius:var(--rad);padding:14px;display:flex;align-items:center;gap:14px">
+          <div style="width:42px;height:42px;background:#EAF3DE;color:#3B6D11;border-radius:var(--rad);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">
+            <i class="ti ti-file-text"></i>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700">package.json</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px">패키지 설정 파일 — 자동 설치에 필요</div>
+          </div>
+          <button class="abtn p" style="flex-shrink:0;font-size:12px" onclick="dlFile('package.json','ewogICJuYW1lIjogInBlLWluZm8tY2xhc3Mtc2VydmVyIiwKICAidmVyc2lvbiI6ICIxLjAuMCIsCiAgImRlc2NyaXB0aW9uIjogIuyytOycocK37KCV67O0IOycte2VqSDsiJjsl4UgV2ViUlRDIOyEnOuyhCIsCiAgIm1haW4iOiAic2VydmVyLmpzIiwKICAic2NyaXB0cyI6IHsKICAgICJzdGFydCI6ICJub2RlIHNlcnZlci5qcyIKICB9LAogICJkZXBlbmRlbmNpZXMiOiB7CiAgICAid3MiOiAiXjguMTYuMCIKICB9Cn0K')">
+            <i class="ti ti-download"></i> 다운로드
+          </button>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <button class="abtn green" style="width:100%;justify-content:center;padding:10px;font-size:13px" onclick="dlAll()">
+          <i class="ti ti-package"></i> 3개 파일 한번에 다운로드
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:14px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+        <i class="ti ti-list-numbers" style="font-size:16px;color:var(--green)"></i>
+        실행 방법 (단계별 안내)
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:0">
+
+        <div style="display:flex;gap:14px;padding-bottom:18px;position:relative">
+          <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--text);color:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">1</div>
+            <div style="width:2px;flex:1;background:var(--border);margin-top:6px"></div>
+          </div>
+          <div style="padding-top:4px;flex:1">
+            <div style="font-size:13px;font-weight:700;margin-bottom:6px">위 파일 3개를 같은 폴더에 저장</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7">
+              바탕화면에 <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-size:11px">수업프로그램</code> 폴더 만들고 세 파일을 그 안에 넣어두세요.
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:14px;padding-bottom:18px;position:relative">
+          <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--text);color:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">2</div>
+            <div style="width:2px;flex:1;background:var(--border);margin-top:6px"></div>
+          </div>
+          <div style="padding-top:4px;flex:1">
+            <div style="font-size:13px;font-weight:700;margin-bottom:6px"><code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-size:12px">시작.bat</code> 더블클릭</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7">
+              처음 실행 시 Node.js 포터블 버전을 자동으로 다운로드합니다 (약 30MB, 인터넷 필요).<br>
+              두 번째부터는 인터넷 없이 바로 실행됩니다.
+            </div>
+            <div style="margin-top:8px;background:var(--bg3);border-radius:var(--rad);padding:10px;font-size:11px;color:var(--text2)">
+              💡 Windows 보안 경고가 뜨면 <strong style="color:var(--text)">"추가 정보" → "실행"</strong> 클릭<br>
+              💡 방화벽 창이 뜨면 <strong style="color:var(--text)">"허용"</strong> 클릭
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:14px;padding-bottom:18px;position:relative">
+          <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--text);color:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">3</div>
+            <div style="width:2px;flex:1;background:var(--border);margin-top:6px"></div>
+          </div>
+          <div style="padding-top:4px;flex:1">
+            <div style="font-size:13px;font-weight:700;margin-bottom:6px">검은 창에서 학생 주소 확인</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7">
+              서버가 켜지면 아래처럼 주소가 표시됩니다.
+            </div>
+            <div style="margin-top:8px;background:#111;border-radius:var(--rad);padding:12px;font-family:monospace;font-size:12px;color:#aaffaa;line-height:1.8">
+              교사 주소 → http://localhost:3000<br>
+              <span style="color:#ffff88">학생 주소 → http://192.168.1.5:3000</span><br>
+              <span style="color:#aaaaaa">★ 위 학생 주소를 칠판에 적어주세요 ★</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:14px;padding-bottom:18px;position:relative">
+          <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--text);color:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">4</div>
+            <div style="width:2px;flex:1;background:var(--border);margin-top:6px"></div>
+          </div>
+          <div style="padding-top:4px;flex:1">
+            <div style="font-size:13px;font-weight:700;margin-bottom:6px">학생 주소를 칠판에 적기</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7">
+              학생들은 각자 컴퓨터 브라우저(크롬·엣지)에서 그 주소를 입력하면 접속됩니다.<br>
+              설치 불필요, 주소 입력만으로 완료.
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:14px">
+          <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">5</div>
+          </div>
+          <div style="padding-top:4px;flex:1">
+            <div style="font-size:13px;font-weight:700;margin-bottom:6px">화면 방송 시작 (선택)</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7">
+              교사용 관리 → <strong style="color:var(--text)">화면 방송</strong> 탭 → <strong style="color:var(--text)">방송 시작</strong> 클릭<br>
+              웹캠 또는 화면 공유를 선택하면 학생 화면에 실시간으로 전송됩니다.
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:18px;background:var(--blue-bg);border-radius:var(--rad);padding:12px;font-size:12px;color:var(--blue);line-height:1.7">
+        <strong>주의사항</strong><br>
+        • 교사 컴퓨터와 학생 컴퓨터가 <strong>같은 와이파이(교내망)</strong>에 연결되어 있어야 합니다<br>
+        • 수업 종료 후 검은 창에서 <strong>Ctrl+C</strong>를 눌러 서버를 종료하세요<br>
+        • 학생들은 별도 설치 없이 브라우저만 있으면 접속 가능합니다
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* ══════════════════════════════════════════
+   전역 상태
+══════════════════════════════════════════ */
+const TEACHER_PW = '1234';
+const DEF_QS = [
+  '티처블머신으로 학습시킨 자세 분류 모델의 정확도는 어떠했나요? 어떤 점이 어려웠나요?',
+  '헥사보드에서 가속도/자이로 센서 데이터를 확인했을 때 어떤 점이 인상 깊었나요?',
+  'AI 모델 판별 결과를 헥사보드에 전송하여 진동/LED 피드백이 구현되었을 때 느낀 점을 작성하세요.',
+  '오늘 수업을 통해 체육과 정보(AI)의 융합에서 새롭게 알게 된 점이나 더 탐구하고 싶은 점은?'
+];
+const AI_NOTES = {
+  claude: 'Claude API가 연결되어 있습니다.',
+  gemini: 'Gemini는 별도 API 키가 필요합니다. 현재는 Claude로 생성됩니다.',
+  gpt:    'OpenAI는 별도 API 키가 필요합니다. 현재는 Claude로 생성됩니다.'
+};
+const ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' }
+];
+
+let questions = [...DEF_QS], submissions = [], selectedAI = 'claude', rfFilter = 'all';
+let localStream = null, isMirrored = false, zoomLevel = 1, vZoom = 1;
+let ws = null;                         // WebSocket to signaling server
+let peerConns = {};                    // broadcaster: viewerId → RTCPeerConnection
+let viewerPc = null;                   // viewer: single RTCPeerConnection
+let viewerPollTimer = null;
+const MY_ID = 'v_' + Math.random().toString(36).slice(2, 8);
+
+/* WebSocket 서버 주소 – 현재 호스트 기준 자동 설정 */
+function getSavedServerIP() {
+  return localStorage.getItem('server-ip') || location.hostname;
+}
+let WS_URL = `ws://${getSavedServerIP()}:3000`;
+
+/* ══════════════════════════════════════════
+   유틸
+══════════════════════════════════════════ */
+function showLoading(m) { document.getElementById('loading-text').textContent = m||'로딩 중...'; document.getElementById('loading-overlay').classList.add('show'); }
+function hideLoading() { document.getElementById('loading-overlay').classList.remove('show'); }
+function updateLabels() {
+  const n1 = document.getElementById('ws-n1').value.trim();
+  const n2 = document.getElementById('ws-n2').value.trim();
+  document.getElementById('ref-lbl-1').textContent = (n1||'팀원 1') + ' 소감문';
+  document.getElementById('ref-lbl-2').textContent = (n2||'팀원 2') + ' 소감문';
+}
+
+/* ══════════════════════════════════════════
+   화면 전환
+══════════════════════════════════════════ */
+async function go(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  loadSavedIP();
+  if (id === 'worksheet')  { await loadQs(); renderWSQs(); updateLabels(); }
+  if (id === 'teacher')    { await renderTeacher(); }
+  if (id === 'viewer')     { connectViewer(); }
+}
+function teacherLogin() {
+  const pw = document.getElementById('teacher-pw').value;
+  const err = document.getElementById('login-err');
+  if (pw === TEACHER_PW) { err.style.display='none'; document.getElementById('teacher-pw').value=''; go('teacher'); }
+  else err.style.display = 'block';
+}
+function switchTab(btn, id) {
+  document.querySelectorAll('.t-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.t-content').forEach(t => t.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  if (id === 'tab-qmgmt') renderQEditor();
+}
+function selAI(ai, btn) {
+  selectedAI = ai;
+  document.querySelectorAll('.ai-chip').forEach(c => c.classList.remove('sel'));
+  btn.classList.add('sel');
+  document.getElementById('ai-note').textContent = AI_NOTES[ai];
+}
+
+/* ══════════════════════════════════════════
+   WebSocket 공통 연결
+══════════════════════════════════════════ */
+function connectWS(onOpen) {
+  WS_URL = `ws://${getSavedServerIP()}:3000`;
+  if (ws && ws.readyState === WebSocket.OPEN) { onOpen(); return; }
+  ws = new WebSocket(WS_URL);
+  ws.onopen = () => onOpen();
+  ws.onerror = () => console.warn('WS 연결 실패 – 서버가 실행 중인지 확인하세요');
+}
+
+/* ══════════════════════════════════════════
+   교사 방송 (Broadcaster)
+══════════════════════════════════════════ */
+async function startBroadcast() {
+  const src = document.getElementById('cam-src').value;
+  try {
+    localStream = src === 'screen'
+      ? await navigator.mediaDevices.getDisplayMedia({ video: { width:{ideal:1920}, height:{ideal:1080} }, audio: false })
+      : await navigator.mediaDevices.getUserMedia({ video: { width:{ideal:1280}, height:{ideal:720} }, audio: false });
+  } catch(e) {
+    const st = document.getElementById('bc-status');
+    st.className = 'smsg err'; st.style.display = 'block';
+    st.textContent = '카메라/화면 접근이 거부됐습니다. 브라우저에서 권한을 허용해 주세요.';
+    return;
+  }
+
+  document.getElementById('teacher-video').srcObject = localStream;
+  document.getElementById('teacher-badge').className = 'cam-badge live';
+  document.getElementById('teacher-badge').innerHTML = '<div class="cam-dot"></div> LIVE';
+  document.getElementById('bc-start').style.display = 'none';
+  document.getElementById('bc-stop').style.display = 'inline-flex';
+  const st = document.getElementById('bc-status');
+  st.className = 'smsg ok'; st.style.display = 'block';
+  st.textContent = '방송 중입니다. 학생들이 접속하면 자동으로 연결됩니다.';
+
+  localStream.getVideoTracks()[0].addEventListener('ended', stopBroadcast);
+
+  connectWS(() => {
+    ws.send(JSON.stringify({ type: 'register-broadcaster' }));
+    ws.onmessage = handleBroadcasterMessage;
+  });
+}
+
+function handleBroadcasterMessage(e) {
+  const msg = JSON.parse(e.data);
+  if (msg.type === 'new-viewer') createOfferFor(msg.viewerId);
+  if (msg.type === 'answer') {
+    const pc = peerConns[msg.viewerId];
+    if (pc) pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+  }
+  if (msg.type === 'ice-candidate' && msg.candidate) {
+    const pc = peerConns[msg.viewerId];
+    if (pc) pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+  }
+  if (msg.type === 'viewer-count') {
+    document.getElementById('viewer-count').textContent = msg.count;
+  }
+}
+
+async function createOfferFor(viewerId) {
+  const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+  peerConns[viewerId] = pc;
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+  pc.onicecandidate = e => {
+    if (e.candidate) ws.send(JSON.stringify({ type: 'ice-candidate', candidate: e.candidate, viewerId }));
+  };
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  ws.send(JSON.stringify({ type: 'offer', sdp: pc.localDescription, viewerId }));
+}
+
+function stopBroadcast() {
+  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  Object.values(peerConns).forEach(pc => pc.close()); peerConns = {};
+  document.getElementById('teacher-video').srcObject = null;
+  document.getElementById('teacher-badge').className = 'cam-badge off';
+  document.getElementById('teacher-badge').innerHTML = '<i class="ti ti-video-off" style="font-size:11px"></i> 대기 중';
+  document.getElementById('bc-start').style.display = 'inline-flex';
+  document.getElementById('bc-stop').style.display = 'none';
+  document.getElementById('viewer-count').textContent = '0';
+  const st = document.getElementById('bc-status');
+  st.className = 'smsg info'; st.style.display = 'block'; st.textContent = '방송이 종료됐습니다.';
+  if (ws && ws.readyState === WebSocket.OPEN) ws.close();
+}
+
+/* ══════════════════════════════════════════
+   학생 시청 (Viewer)
+══════════════════════════════════════════ */
+function connectViewer() {
+  if (viewerPollTimer) { clearTimeout(viewerPollTimer); viewerPollTimer = null; }
+  setViewerStatus('waiting', '서버에 연결 중...');
+
+  connectWS(() => {
+    ws.send(JSON.stringify({ type: 'set-viewer-id', viewerId: MY_ID }));
+    ws.send(JSON.stringify({ type: 'register-viewer' }));
+    ws.onmessage = handleViewerMessage;
+  });
+  ws.onerror = () => setViewerStatus('error', '서버 연결 실패. 선생님 컴퓨터의 서버가 실행 중인지 확인하세요.');
+  ws.onclose = () => {
+    if (document.getElementById('viewer').classList.contains('active')) {
+      setViewerStatus('waiting', '연결이 끊어졌습니다. 5초 후 재연결합니다...');
+      viewerPollTimer = setTimeout(connectViewer, 5000);
+    }
+  };
+}
+
+async function handleViewerMessage(e) {
+  const msg = JSON.parse(e.data);
+  if (msg.type === 'no-broadcaster') {
+    setViewerStatus('waiting', '교사가 방송을 시작하면 자동으로 연결됩니다');
+    viewerPollTimer = setTimeout(() => ws.send(JSON.stringify({ type: 'request-offer', viewerId: MY_ID })), 3000);
+    return;
+  }
+  if (msg.type === 'broadcaster-joined') {
+    setViewerStatus('waiting', '방송 발견! 연결 중...');
+    ws.send(JSON.stringify({ type: 'request-offer', viewerId: MY_ID }));
+    return;
+  }
+  if (msg.type === 'broadcaster-left') {
+    setViewerStatus('waiting', '방송이 종료됐습니다. 교사가 다시 시작하면 연결됩니다.');
+    if (viewerPc) { viewerPc.close(); viewerPc = null; }
+    document.getElementById('viewer-badge').className = 'cam-badge off';
+    document.getElementById('viewer-badge').innerHTML = '<i class="ti ti-wifi-off" style="font-size:11px"></i> 방송 종료';
+    document.getElementById('viewer-sub').textContent = '방송 종료';
+    return;
+  }
+  if (msg.type === 'offer') {
+    if (viewerPc) viewerPc.close();
+    viewerPc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    viewerPc.ontrack = e => {
+      document.getElementById('viewer-video').srcObject = e.streams[0];
+      setViewerStatus('connected', '연결됨 — WebRTC 실시간 스트리밍');
+      document.getElementById('viewer-badge').className = 'cam-badge live';
+      document.getElementById('viewer-badge').innerHTML = '<div class="cam-dot"></div> LIVE';
+      document.getElementById('viewer-sub').textContent = 'LIVE 중';
+    };
+    viewerPc.onicecandidate = ev => {
+      if (ev.candidate) ws.send(JSON.stringify({ type: 'ice-candidate', candidate: ev.candidate, viewerId: MY_ID }));
+    };
+    await viewerPc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+    const answer = await viewerPc.createAnswer();
+    await viewerPc.setLocalDescription(answer);
+    ws.send(JSON.stringify({ type: 'answer', sdp: viewerPc.localDescription }));
+    return;
+  }
+  if (msg.type === 'ice-candidate' && msg.candidate && viewerPc) {
+    viewerPc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+  }
+}
+
+function setViewerStatus(type, text) {
+  const el = document.getElementById('viewer-status');
+  const icons = { waiting: 'ti-wifi-off', connected: 'ti-wifi', error: 'ti-alert-circle' };
+  el.className = 'conn-status ' + type;
+  el.innerHTML = `<i class="ti ${icons[type]}" style="font-size:16px"></i><span>${text}</span>`;
+}
+
+function stopViewer() {
+  if (viewerPollTimer) { clearTimeout(viewerPollTimer); viewerPollTimer = null; }
+  if (viewerPc) { viewerPc.close(); viewerPc = null; }
+  if (ws) { ws.close(); ws = null; }
+}
+
+async function togglePiP() {
+  const video = document.getElementById('viewer-video');
+  if (document.pictureInPictureElement) { await document.exitPictureInPicture(); }
+  else if (video.srcObject && video.requestPictureInPicture) { try { await video.requestPictureInPicture(); } catch(e) {} }
+}
+
+/* ══════════════════════════════════════════
+   줌 / 미러 / 스냅샷
+══════════════════════════════════════════ */
+function adjZoom(d) { zoomLevel = Math.max(.5, Math.min(3, zoomLevel+d)); applyZoom(); }
+function resetZoom() { zoomLevel = 1; applyZoom(); }
+function applyZoom() {
+  document.getElementById('teacher-video').style.transform = (isMirrored?'scaleX(-1) ':'') + 'scale(' + zoomLevel + ')';
+  document.getElementById('zoom-lbl').textContent = Math.round(zoomLevel*100) + '%';
+}
+function toggleMirror() { isMirrored = !isMirrored; applyZoom(); }
+function adjVZoom(d) {
+  vZoom = Math.max(.5, Math.min(3, vZoom+d));
+  const v = document.getElementById('viewer-video');
+  v.style.transform = 'scale(' + vZoom + ')'; v.style.transformOrigin = 'top left';
+  document.getElementById('v-zoom-lbl').textContent = Math.round(vZoom*100) + '%';
+}
+function resetVZoom() { vZoom=1; const v=document.getElementById('viewer-video'); v.style.transform=''; document.getElementById('v-zoom-lbl').textContent='100%'; }
+function takeSnapshot() {
+  const video = document.getElementById('teacher-video');
+  if (!video.videoWidth) { alert('방송을 먼저 시작하세요.'); return; }
+  const c = document.getElementById('snap-canvas');
+  c.width = video.videoWidth; c.height = video.videoHeight;
+  c.getContext('2d').drawImage(video, 0, 0);
+  const area = document.getElementById('snap-area');
+  const img = document.createElement('img');
+  img.src = c.toDataURL('image/png');
+  img.style.cssText = 'width:100%;border-radius:var(--rad);border:1px solid var(--border);margin-top:10px';
+  const dl = document.createElement('a');
+  dl.href = img.src; dl.download = 'snapshot_' + Date.now() + '.png';
+  dl.style.cssText = 'display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:5px 12px;border:1px solid var(--border2);border-radius:var(--rad);font-size:12px;color:var(--text);text-decoration:none';
+  dl.innerHTML = '<i class="ti ti-download"></i> 이미지 저장';
+  area.innerHTML = ''; area.appendChild(img); area.appendChild(dl);
+}
+function toggleFullscreen(id) {
+  const el = document.getElementById(id);
+  if (document.fullscreenElement) document.exitFullscreen();
+  else if (el.requestFullscreen) el.requestFullscreen();
+}
+
+/* ══════════════════════════════════════════
+   로컬 스토리지 (활동지 데이터)
+══════════════════════════════════════════ */
+function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }
+function lsSet(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+
+async function loadQs() { const r = lsGet('questions'); if (r) questions = r; }
+async function loadSubmissions() {
+  submissions = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('team:')) { const v = lsGet(k); if (v) submissions.push(v); }
+  }
+}
+
+/* ══════════════════════════════════════════
+   교사 대시보드
+══════════════════════════════════════════ */
+async function renderTeacher() { await loadQs(); await loadSubmissions(); renderOverview(); renderTeamSel(); renderRfList(); renderSkList(); document.getElementById('ai-note').textContent = AI_NOTES[selectedAI]; }
+
+function renderOverview() {
+  const body = document.getElementById('overview-body'), empty = document.getElementById('overview-empty');
+  document.getElementById('st-teams').textContent = submissions.length;
+  document.getElementById('st-act').textContent = submissions.length * 2;
+  document.getElementById('st-r1').textContent = submissions.filter(s=>s.ref1&&s.ref1.trim()).length;
+  document.getElementById('st-r2').textContent = submissions.filter(s=>s.ref2&&s.ref2.trim()).length;
+  body.innerHTML = '';
+  if (!submissions.length) { empty.style.display=''; return; }
+  empty.style.display = 'none';
+  submissions.forEach((s, i) => {
+    const h1=s.ref1&&s.ref1.trim(), h2=s.ref2&&s.ref2.trim();
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${i+1}</td><td><strong>${s.n1||'–'}</strong></td><td><strong>${s.n2||'–'}</strong></td><td>${s.id1||'–'}</td><td>${s.id2||'–'}</td><td>${s.c1||'–'}</td><td><span class="s-ok"><i class="ti ti-check" style="font-size:10px"></i> 제출</span></td><td style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">${h1?`<span class="s-ok">${s.n1} 완료</span>`:`<span class="s-no">${s.n1} 미제출</span>`}${h2?`<span class="s-ok">${s.n2} 완료</span>`:`<span class="s-no">${s.n2} 미제출</span>`}<button class="vbtn" onclick="viewTeam('${s.id1}')">보기</button></td>`;
+    body.appendChild(tr);
+  });
+}
+function renderTeamSel() {
+  const sel = document.getElementById('team-sel'); sel.innerHTML = '<option value="">-- 팀을 선택하세요 --</option>';
+  submissions.forEach(s => { const o=document.createElement('option'); o.value=s.id1; o.textContent=`${s.n1||'?'} & ${s.n2||'?'} (${s.c1||'?'}반)`; sel.appendChild(o); });
+}
+function viewTeam(id1) { switchTab(document.querySelectorAll('.t-tab')[2],'tab-detail'); document.getElementById('team-sel').value=id1; showTeamDetail(); }
+function showTeamDetail() {
+  const id1=document.getElementById('team-sel').value, area=document.getElementById('team-detail');
+  if (!id1) { area.innerHTML='<div class="empty-st">팀을 선택하면 활동지 내용이 표시됩니다</div>'; return; }
+  const s=submissions.find(x=>x.id1===id1);
+  if (!s) { area.innerHTML='<div class="empty-st">데이터를 찾을 수 없습니다</div>'; return; }
+  const ans=s.answers||{};
+  area.innerHTML=`<div class="card"><div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:7px"><span class="mtag m1" style="font-size:11px">팀원1</span><span style="font-size:13px;font-weight:700">${s.n1}</span><span style="font-size:11px;color:var(--text2)">${s.id1} · ${s.c1}반</span></div><div style="display:flex;align-items:center;gap:7px"><span class="mtag m2" style="font-size:11px">팀원2</span><span style="font-size:13px;font-weight:700">${s.n2}</span><span style="font-size:11px;color:var(--text2)">${s.id2}</span></div></div><div style="font-size:10px;font-weight:500;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">공동 활동지</div>${questions.map((q,i)=>`<div class="ans-block"><div class="ans-q">Q${i+1}. ${q}</div><div class="ans-a">${ans[i]||'<span style="color:var(--text2)">미작성</span>'}</div></div>`).join('')}<div style="font-size:10px;font-weight:500;color:var(--text2);margin:12px 0 8px;text-transform:uppercase;letter-spacing:.06em">개인 소감문</div><div class="mem-block"><div class="mem-hdr"><span class="mtag m1">${s.n1} 소감문</span></div><div style="font-size:13px;line-height:1.65">${s.ref1||'<span style="color:var(--text2)">미작성</span>'}</div></div><div class="mem-block"><div class="mem-hdr"><span class="mtag m2">${s.n2} 소감문</span></div><div style="font-size:13px;line-height:1.65">${s.ref2||'<span style="color:var(--text2)">미작성</span>'}</div></div></div>`;
+}
+function renderRfList(f) {
+  f = f||rfFilter;
+  const list=document.getElementById('rf-list'), empty=document.getElementById('rf-empty');
+  let data=submissions;
+  if(f==='m1') data=submissions.filter(s=>s.ref1&&s.ref1.trim());
+  else if(f==='m2') data=submissions.filter(s=>s.ref2&&s.ref2.trim());
+  list.innerHTML='';
+  if(!data.length){empty.style.display='';return;} empty.style.display='none';
+  data.forEach(s=>{
+    const h1=s.ref1&&s.ref1.trim(),h2=s.ref2&&s.ref2.trim();
+    const div=document.createElement('div'); div.className='card'; div.style.marginBottom='11px';
+    div.innerHTML=`<div style="display:flex;gap:8px;margin-bottom:11px;flex-wrap:wrap;align-items:center"><span class="mtag m1" style="font-size:11px">${s.n1||'팀원1'}</span><span class="mtag m2" style="font-size:11px">${s.n2||'팀원2'}</span><span style="font-size:11px;color:var(--text2)">${s.c1||''}반</span>${h1&&h2?'<span class="s-ok" style="font-size:10px">양쪽 완료</span>':h1?`<span class="s-ok" style="font-size:10px">${s.n1} 완료</span><span class="s-no" style="font-size:10px">${s.n2} 미제출</span>`:h2?`<span class="s-no" style="font-size:10px">${s.n1} 미제출</span><span class="s-ok" style="font-size:10px">${s.n2} 완료</span>`:'<span class="s-no" style="font-size:10px">양쪽 미제출</span>'}</div><div class="mem-block"><div class="mem-hdr"><span class="mtag m1">${s.n1||'팀원1'} 소감문</span></div><div style="font-size:13px;line-height:1.65">${s.ref1||'<span style="color:var(--text2);font-size:12px">미제출</span>'}</div></div><div class="mem-block"><div class="mem-hdr"><span class="mtag m2">${s.n2||'팀원2'} 소감문</span></div><div style="font-size:13px;line-height:1.65">${s.ref2||'<span style="color:var(--text2);font-size:12px">미제출</span>'}</div></div>`;
+    list.appendChild(div);
+  });
+}
+function filterRf(f,btn){rfFilter=f;document.querySelectorAll('[id^="rf-"]').forEach(b=>b.classList.remove('p'));btn.classList.add('p');renderRfList(f);}
+function renderSkList() {
+  const list=document.getElementById('sk-list'),empty=document.getElementById('sk-empty');
+  list.innerHTML='';
+  if(!submissions.length){empty.style.display='';return;} empty.style.display='none';
+  submissions.forEach(s=>[1,2].forEach(m=>{
+    const name=m===1?s.n1:s.n2,sid=m===1?s.id1:s.id2,tag=m===1?'m1':'m2';
+    const div=document.createElement('div'); div.className='sk-card';
+    div.innerHTML=`<div class="sk-hdr"><div><span class="mtag ${tag}" style="font-size:11px;margin-right:6px">${name||`팀원${m}`}</span><span style="font-weight:400;color:var(--text2);font-size:11px">${sid||''}</span></div><div style="display:flex;align-items:center;gap:7px"><span id="sk-st-${s.id1}-${m}" style="font-size:11px;color:var(--text2)"></span><button class="gen-btn" onclick="genSeteuk('${s.id1}',${m},this)"><i class="ti ti-sparkles"></i> 생성</button></div></div><textarea class="fta" id="sk-${s.id1}-${m}" style="min-height:72px" placeholder="'생성' 버튼을 눌러 AI가 세특을 작성합니다...">${s[`seteuk${m}`]||''}</textarea>`;
+    list.appendChild(div);
+  }));
+}
+async function genSeteuk(tid,m,btn){
+  const s=submissions.find(x=>x.id1===tid); if(!s)return;
+  btn.disabled=true; const stEl=document.getElementById(`sk-st-${tid}-${m}`); stEl.textContent='생성 중...';
+  const name=m===1?s.n1:s.n2,ans=s.answers||{},ref=m===1?s.ref1:s.ref2;
+  const qaLines=questions.map((q,i)=>`Q${i+1} (${q}): ${ans[i]||'미작성'}`).join('\n');
+  const prompt=`다음은 체육·정보 융합 수업(AI 스마트워치로 운동 자세 교정, 하루 5차시)에서 2인 1조 팀이 제출한 활동지와 개인 소감문입니다.\n\n학생 이름: ${name}\n학번: ${m===1?s.id1:s.id2}\n팀원: ${m===1?s.n2:s.n1}\n\n[공동 활동지]\n${qaLines}\n\n[개인 소감문]\n${ref||'미작성'}\n\n위 내용을 바탕으로 이 학생의 학교생활기록부 세부능력 및 특기사항을 500자 이내로 작성해 주세요. 학생 개인의 활동, 역량, 성장에 초점을 맞추어 전문적인 어조로 작성하세요. 제목 없이 본문만 작성하세요.`;
+  try{
+    const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
+    const data=await res.json();
+    const text=data.text||'생성 실패';
+    document.getElementById(`sk-${tid}-${m}`).value=text;
+    s[`seteuk${m}`]=text; lsSet(`team:${s.id1}`,s);
+    stEl.textContent='✓ 완료'; setTimeout(()=>stEl.textContent='',2500);
+  }catch(e){stEl.textContent='오류 발생';}
+  btn.disabled=false;
+}
+
+/* ══════════════════════════════════════════
+   활동지 / 질문
+══════════════════════════════════════════ */
+function renderWSQs(){document.getElementById('ws-questions').innerHTML=questions.map((q,i)=>`<div class="card"><div class="qt"><span class="qn">${i+1}</span><span>${q}</span></div><textarea class="fta" id="ws-q${i}" placeholder="여기에 답변을 작성하세요..."></textarea></div>`).join('');}
+function renderQEditor(){document.getElementById('q-ed-list').innerHTML=questions.map((q,i)=>`<div class="qe-item"><div class="qe-num">Q${i+1}</div><input class="qe-in" value="${q.replace(/"/g,'&quot;')}" id="qe-${i}"><button class="qe-del" onclick="delQ(${i})" aria-label="삭제"><i class="ti ti-trash"></i></button></div>`).join('');}
+function addQ(){questions.push('새 질문을 입력하세요');renderQEditor();}
+function delQ(i){if(questions.length<=1){alert('최소 1개 이상이어야 합니다.');return;}questions.splice(i,1);renderQEditor();}
+function saveQs(){questions=Array.from(document.querySelectorAll('[id^="qe-"]')).map(el=>el.value.trim()).filter(v=>v);lsSet('questions',questions);const st=document.getElementById('q-save-st');st.className='smsg ok';st.textContent='✓ 저장됐습니다.';setTimeout(()=>st.style.display='none',3000);}
+function resetQs(){if(!confirm('초기화할까요?'))return;questions=[...DEF_QS];renderQEditor();lsSet('questions',questions);}
+
+async function saveWorksheet(){
+  const n1=document.getElementById('ws-n1').value.trim(),id1=document.getElementById('ws-id1').value.trim(),c1=document.getElementById('ws-c1').value.trim(),n2=document.getElementById('ws-n2').value.trim(),id2=document.getElementById('ws-id2').value.trim();
+  const st=document.getElementById('ws-status');
+  if(!n1||!id1||!n2||!id2){st.className='smsg err';st.textContent='두 팀원의 이름과 학번을 모두 입력해 주세요.';return;}
+  showLoading('저장 중...');
+  const answers={};questions.forEach((_,i)=>{const el=document.getElementById(`ws-q${i}`);if(el)answers[i]=el.value.trim();});
+  const data={n1,id1,c1,n2,id2,answers,ref1:document.getElementById('ws-ref1').value.trim(),ref2:document.getElementById('ws-ref2').value.trim(),submittedAt:new Date().toISOString()};
+  lsSet(`team:${id1}`,data);
+  st.className='smsg ok';st.textContent='✓ 활동지가 저장됐습니다!';
+  hideLoading();
+}
+async function refreshWorksheet(){
+  const id1=document.getElementById('ws-id1').value.trim();if(!id1)return;
+  showLoading('불러오는 중...');await new Promise(r=>setTimeout(r,500));
+  await loadQs();renderWSQs();
+  const d=lsGet(`team:${id1}`);
+  if(d){document.getElementById('ws-n1').value=d.n1||'';document.getElementById('ws-c1').value=d.c1||'';document.getElementById('ws-n2').value=d.n2||'';document.getElementById('ws-id2').value=d.id2||'';const ans=d.answers||{};questions.forEach((_,i)=>{const el=document.getElementById(`ws-q${i}`);if(el)el.value=ans[i]||'';});document.getElementById('ws-ref1').value=d.ref1||'';document.getElementById('ws-ref2').value=d.ref2||'';updateLabels();}
+  hideLoading();
+}
+async function refreshTeacher(){showLoading('새로고침 중...');await new Promise(r=>setTimeout(r,600));await renderTeacher();hideLoading();}
+async function saveTeacher(){
+  showLoading('저장 중...');
+  for(const s of submissions)for(const m of[1,2]){const el=document.getElementById(`sk-${s.id1}-${m}`);if(el){s[`seteuk${m}`]=el.value;lsSet(`team:${s.id1}`,s);}}
+  await new Promise(r=>setTimeout(r,400));hideLoading();
+}
+function fakeDownload(btn){btn.innerHTML='<i class="ti ti-check"></i> 완료';btn.style.color='var(--green)';setTimeout(()=>{btn.innerHTML='<i class="ti ti-download"></i> 다운';btn.style.color='';},2000);}
+function dlExcel(){
+  if(!submissions.length){alert('제출된 활동지가 없습니다.');return;}
+  const hdr=['팀원1','학번1','팀원2','학번2','반',...questions.map((q,i)=>`Q${i+1}`),'팀원1 소감문','팀원2 소감문','팀원1 세특','팀원2 세특'];
+  const rows=submissions.map(s=>{const ans=s.answers||{};return[s.n1,s.id1,s.n2,s.id2,s.c1,...questions.map((_,i)=>ans[i]||''),s.ref1||'',s.ref2||'',s.seteuk1||'',s.seteuk2||''];});
+  const wb=XLSX.utils.book_new(),ws2=XLSX.utils.aoa_to_sheet([hdr,...rows]);
+  ws2['!cols']=[{wch:10},{wch:10},{wch:10},{wch:10},{wch:6},...questions.map(()=>({wch:26})),{wch:30},{wch:30},{wch:55},{wch:55}];
+  XLSX.utils.book_append_sheet(wb,ws2,'세특');
+  XLSX.writeFile(wb,`세특_${new Date().toLocaleDateString('ko-KR').replace(/\. /g,'-').replace('.','')}.xlsx`);
+}
+
+/* 초기화 */
+(()=>{ const r=lsGet('questions'); if(r)questions=r; setTimeout(loadSavedIP, 100); })();
+
+/* ══════════════════════════════════════════
+   파일 다운로드 함수
+══════════════════════════════════════════ */
+function dlFile(filename, b64) {
+  const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const blob = new Blob([bytes]);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function dlAll() {
+  const files = [
+    { name: '시작.bat',      id: 'BAT_B64'  },
+    { name: 'server.js',    id: 'SERVER_B64'},
+    { name: 'package.json', id: 'PKG_B64'  },
+  ];
+  // 각 버튼의 onclick에서 b64 값 추출해서 순차 다운로드
+  const btns = document.querySelectorAll('#tab-install button[onclick^="dlFile"]');
+  let i = 0;
+  function next() {
+    if (i >= btns.length) return;
+    btns[i].click();
+    i++;
+    setTimeout(next, 600);
+  }
+  next();
+}
+
+
+/* ── 서버 IP 저장 ── */
+function saveServerIP() {
+  const ip = document.getElementById('server-ip-input').value.trim();
+  if (!ip) return;
+  localStorage.setItem('server-ip', ip);
+  WS_URL = `ws://${ip}:3000`;
+  const msg = document.getElementById('ip-saved-msg');
+  msg.style.display = 'inline-flex';
+  setTimeout(() => msg.style.display = 'none', 2000);
+}
+function saveServerIPViewer() {
+  const ip = document.getElementById('viewer-ip-input').value.trim();
+  if (!ip) return;
+  localStorage.setItem('server-ip', ip);
+  WS_URL = `ws://${ip}:3000`;
+  connectViewer();
+}
+function loadSavedIP() {
+  const ip = localStorage.getItem('server-ip') || '';
+  const inp1 = document.getElementById('server-ip-input');
+  const inp2 = document.getElementById('viewer-ip-input');
+  if (inp1) inp1.value = ip;
+  if (inp2) inp2.value = ip;
+}
+
+</script>
+</body>
+</html>
