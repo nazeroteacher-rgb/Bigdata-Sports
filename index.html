@@ -182,8 +182,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <div class="hero">
     <div class="hero-title">체육·정보 융합 수업</div>
     <div class="hero-sub">AI 스마트워치로 배우는 운동 자세 교정</div>
-    <div id="sb-home-status" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:3px 12px;border-radius:999px;font-size:11px;font-weight:500;background:#FCEBEB;color:#791F1F">
-      <i class="ti ti-database-off" aria-hidden="true" style="font-size:12px"></i> DB 미연결 — index.html에 Supabase 키를 설정해 주세요
+    <div id="sb-home-status" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:3px 12px;border-radius:999px;font-size:11px;font-weight:500;background:#EAF3DE;color:#27500A">
+      <i class="ti ti-database" aria-hidden="true" style="font-size:12px"></i> DB 연결됨
     </div>
     <div class="badge-row">
       <span class="bdg">하루 5차시</span>
@@ -251,15 +251,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
         <div class="mem-hdr"><span class="mtag m1">팀원 1</span><span style="font-size:11px;color:var(--text2)">(대표 입력자)</span></div>
         <div class="frow">
           <div class="fg"><label class="fl">이름</label><input class="fi" id="ws-n1" type="text" placeholder="홍길동" oninput="updateLabels()"></div>
-          <div class="fg"><label class="fl">학번</label><input class="fi" id="ws-id1" type="text" placeholder="10101"></div>
+          <div class="fg"><label class="fl">학번</label><input class="fi" id="ws-id1" type="text" placeholder="1111"></div>
         </div>
-        <div class="fg"><label class="fl">반</label><input class="fi" id="ws-c1" type="text" placeholder="예: 1반" style="max-width:120px"></div>
       </div>
       <div class="mem-block">
         <div class="mem-hdr"><span class="mtag m2">팀원 2</span></div>
         <div class="frow">
           <div class="fg"><label class="fl">이름</label><input class="fi" id="ws-n2" type="text" placeholder="김철수" oninput="updateLabels()"></div>
-          <div class="fg"><label class="fl">학번</label><input class="fi" id="ws-id2" type="text" placeholder="10102"></div>
+          <div class="fg"><label class="fl">학번</label><input class="fi" id="ws-id2" type="text" placeholder="1112"></div>
         </div>
       </div>
     </div>
@@ -771,6 +770,7 @@ async function go(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   loadSavedIP(); loadSbInputs();
+  if (id === 'home')       { updateSbHomeBadge(); }
   if (id === 'worksheet')  { await loadQs(); renderWSQs(); updateLabels(); }
   if (id === 'teacher')    { await renderTeacher(); }
   if (id === 'viewer')     { connectViewer(); }
@@ -1164,7 +1164,7 @@ async function resetQs(){
 }
 
 async function saveWorksheet(){
-  const n1=document.getElementById('ws-n1').value.trim(),id1=document.getElementById('ws-id1').value.trim(),c1=document.getElementById('ws-c1').value.trim(),n2=document.getElementById('ws-n2').value.trim(),id2=document.getElementById('ws-id2').value.trim();
+  const n1=document.getElementById('ws-n1').value.trim(),id1=document.getElementById('ws-id1').value.trim(),c1='',n2=document.getElementById('ws-n2').value.trim(),id2=document.getElementById('ws-id2').value.trim();
   const st=document.getElementById('ws-status');
   if(!n1||!id1||!n2||!id2){st.className='smsg err';st.textContent='두 팀원의 이름과 학번을 모두 입력해 주세요.';return;}
   if(!sb){st.className='smsg err';st.textContent='Supabase가 연결되지 않았습니다. index.html의 SB_URL과 SB_ANON 값을 설정해 주세요.';return;}
@@ -1193,7 +1193,7 @@ async function refreshWorksheet(){
     const {data,error}=await sb.from('submissions').select('*').eq('student_id1',id1).single();
     if(data&&!error){
       document.getElementById('ws-n1').value=data.name1||'';
-      document.getElementById('ws-c1').value=data.class1||'';
+      
       document.getElementById('ws-n2').value=data.name2||'';
       document.getElementById('ws-id2').value=data.student_id2||'';
       const ans=data.answers||{};
