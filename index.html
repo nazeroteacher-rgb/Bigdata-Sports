@@ -182,6 +182,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <div class="hero">
     <div class="hero-title">체육·정보 융합 수업</div>
     <div class="hero-sub">AI 스마트워치로 배우는 운동 자세 교정</div>
+    <div id="sb-home-status" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:3px 12px;border-radius:999px;font-size:11px;font-weight:500;background:#FCEBEB;color:#791F1F">
+      <i class="ti ti-database-off" aria-hidden="true" style="font-size:12px"></i> DB 미연결 — index.html에 Supabase 키를 설정해 주세요
+    </div>
     <div class="badge-row">
       <span class="bdg">하루 5차시</span>
       <span class="bdg">2인 1조</span>
@@ -486,6 +489,66 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <!-- 설치 안내 탭 -->
   <div id="tab-install" class="t-content hidden">
     <div class="card" style="margin-bottom:12px">
+      <!-- Supabase 설정 섹션 -->
+      <div style="font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+        <i class="ti ti-database" style="font-size:16px;color:#3ECF8E"></i>
+        Supabase 데이터베이스 연결
+        <span id="sb-status-badge" style="font-size:11px;font-weight:500;padding:2px 9px;border-radius:999px;background:var(--bg3);color:var(--text2)">미연결</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.7">
+        학생 활동지와 세특 데이터를 Supabase에 저장합니다. 아래 설정을 한 번만 입력하면 이후 자동 연결됩니다.
+      </div>
+      <div style="display:grid;gap:10px;margin-bottom:12px">
+        <div class="fg">
+          <label class="fl">Supabase Project URL</label>
+          <input class="fi" id="sb-url-input" type="text" placeholder="https://xxxxxxxxxxx.supabase.co" style="font-family:monospace;font-size:12px">
+        </div>
+        <div class="fg">
+          <label class="fl">Supabase Anon Key (공개키)</label>
+          <input class="fi" id="sb-anon-input" type="text" placeholder="eyJhbGciOiJIUzI1NiIs..." style="font-family:monospace;font-size:12px">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <button class="abtn green" onclick="saveSbConfig()"><i class="ti ti-plug"></i> 연결하기</button>
+        <button class="abtn" onclick="testSbConnection()"><i class="ti ti-wifi"></i> 연결 테스트</button>
+      </div>
+      <div id="sb-config-msg" class="smsg" style="margin-bottom:12px"></div>
+
+      <div style="background:var(--bg3);border-radius:var(--rad);padding:14px;margin-bottom:20px">
+        <div style="font-size:12px;font-weight:500;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+          <i class="ti ti-list-numbers" style="font-size:14px;color:var(--blue)"></i>
+          Supabase 설정 방법 (최초 1회)
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--text2);line-height:1.7">
+          <div><strong style="color:var(--text)">1.</strong> <a href="https://supabase.com" target="_blank" style="color:var(--blue)">supabase.com</a> → 무료 계정 가입 → New Project 생성</div>
+          <div><strong style="color:var(--text)">2.</strong> 좌측 메뉴 <strong style="color:var(--text)">SQL Editor</strong> → 아래 SQL 붙여넣고 실행</div>
+          <pre style="background:var(--bg2);border-radius:var(--rad);padding:12px;font-size:11px;overflow-x:auto;color:var(--text);line-height:1.6;margin:4px 0">-- 제출 데이터 테이블
+create table submissions (
+  id uuid primary key default gen_random_uuid(),
+  name1 text, student_id1 text unique,
+  class1 text, name2 text, student_id2 text,
+  answers jsonb default '{}',
+  reflection1 text, reflection2 text,
+  seteuk1 text, seteuk2 text,
+  submitted_at timestamptz default now()
+);
+-- 설정 테이블 (질문 저장용)
+create table settings (
+  key text primary key,
+  value text
+);
+-- 익명 접근 허용
+alter table submissions enable row level security;
+alter table settings enable row level security;
+create policy "allow all" on submissions for all using (true) with check (true);
+create policy "allow all" on settings for all using (true) with check (true);</pre>
+          <div><strong style="color:var(--text)">3.</strong> 좌측 메뉴 <strong style="color:var(--text)">Project Settings → API</strong></div>
+          <div style="padding-left:14px">• <strong style="color:var(--text)">Project URL</strong> 복사 → 위 URL 칸에 붙여넣기</div>
+          <div style="padding-left:14px">• <strong style="color:var(--text)">anon public</strong> 키 복사 → 위 Key 칸에 붙여넣기</div>
+          <div><strong style="color:var(--text)">4.</strong> 위의 <strong style="color:var(--text)">"연결하기"</strong> 버튼 클릭 → 완료!</div>
+        </div>
+      </div>
+
       <div style="font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px">
         <i class="ti ti-download" style="font-size:16px;color:var(--blue)"></i>
         프로그램 설치 파일 다운로드
@@ -636,12 +699,29 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 /* ══════════════════════════════════════════
    전역 상태
 ══════════════════════════════════════════ */
 const TEACHER_PW = '1234';
+
+/* ── Supabase 설정 ── */
+// ★ 아래 두 값을 Supabase 대시보드에서 복사해서 붙여넣으세요
+const SB_URL  = 'https://cytczcwmcusytjgiqvsv.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5dGN6Y3dtY3VzeXRqZ2lxdnN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNzE4NDQsImV4cCI6MjA5NDc0Nzg0NH0.-h5V1yXGsPvkYd_N4x4ReFl4BLuuHqh4vA6jUihrcQ8';
+
+let sb = null;
+function initSupabase() {
+  if (!window.supabase) return false;
+  if (!SB_URL || SB_URL === 'YOUR_SUPABASE_URL') return false;
+  if (!SB_ANON || SB_ANON === 'YOUR_SUPABASE_ANON_KEY') return false;
+  try {
+    sb = window.supabase.createClient(SB_URL, SB_ANON);
+    return true;
+  } catch(e) { console.error('Supabase 초기화 실패:', e); return false; }
+}
 const DEF_QS = [
   '티처블머신으로 학습시킨 자세 분류 모델의 정확도는 어떠했나요? 어떤 점이 어려웠나요?',
   '헥사보드에서 가속도/자이로 센서 데이터를 확인했을 때 어떤 점이 인상 깊었나요?',
@@ -690,7 +770,7 @@ function updateLabels() {
 async function go(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  loadSavedIP();
+  loadSavedIP(); loadSbInputs();
   if (id === 'worksheet')  { await loadQs(); renderWSQs(); updateLabels(); }
   if (id === 'teacher')    { await renderTeacher(); }
   if (id === 'viewer')     { connectViewer(); }
@@ -927,16 +1007,60 @@ function toggleFullscreen(id) {
 /* ══════════════════════════════════════════
    로컬 스토리지 (활동지 데이터)
 ══════════════════════════════════════════ */
+/* ── localStorage 헬퍼 (Supabase 미설정 폴백용) ── */
 function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }
 function lsSet(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 
-async function loadQs() { const r = lsGet('questions'); if (r) questions = r; }
+/* ── Supabase 헬퍼 ── */
+async function sbGet(table, filters={}) {
+  if (!sb) return null;
+  let q = sb.from(table).select('*');
+  for (const [col, val] of Object.entries(filters)) q = q.eq(col, val);
+  const { data, error } = await q;
+  if (error) { console.error(error); return null; }
+  return data;
+}
+async function sbUpsert(table, row) {
+  if (!sb) return false;
+  const { error } = await sb.from(table).upsert(row, { onConflict: 'id' });
+  if (error) { console.error(error); return false; }
+  return true;
+}
+
+/* ── 질문 로드 ── */
+async function loadQs() {
+  if (sb) {
+    const rows = await sbGet('settings', { key: 'questions' });
+    if (rows && rows.length > 0) { questions = JSON.parse(rows[0].value); return; }
+  }
+  const r = lsGet('questions'); if (r) questions = r;
+}
+
+/* ── 제출 데이터 로드 ── */
 async function loadSubmissions() {
   submissions = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (k && k.startsWith('team:')) { const v = lsGet(k); if (v) submissions.push(v); }
+  if (sb) {
+    try {
+      const { data, error } = await sb.from('submissions').select('*').order('submitted_at', { ascending: true });
+      if (!error && data) {
+        submissions = data.map(r => ({
+          _id: r.id, n1: r.name1, id1: r.student_id1, c1: r.class1,
+          n2: r.name2, id2: r.student_id2,
+          answers: r.answers || {},
+          ref1: r.reflection1 || '', ref2: r.reflection2 || '',
+          seteuk1: r.seteuk1 || '', seteuk2: r.seteuk2 || '',
+          submittedAt: r.submitted_at
+        }));
+      }
+    } catch(e) { console.error('제출 목록 로드 실패:', e); }
+    return;
   }
+  try {
+    const keys = await window.storage.list('team:');
+    if (keys && keys.keys) for (const k of keys.keys) {
+      try { const r = await window.storage.get(k); if(r) submissions.push(JSON.parse(r.value)); } catch(e) {}
+    }
+  } catch(e) {}
 }
 
 /* ══════════════════════════════════════════
@@ -1011,7 +1135,8 @@ async function genSeteuk(tid,m,btn){
     const data=await res.json();
     const text=data.text||'생성 실패';
     document.getElementById(`sk-${tid}-${m}`).value=text;
-    s[`seteuk${m}`]=text; lsSet(`team:${s.id1}`,s);
+    s[`seteuk${m}`]=text;
+    if(sb&&s._id){await sb.from('submissions').update({[`seteuk${m}`]:text}).eq('id',s._id);}
     stEl.textContent='✓ 완료'; setTimeout(()=>stEl.textContent='',2500);
   }catch(e){stEl.textContent='오류 발생';}
   btn.disabled=false;
@@ -1024,33 +1149,78 @@ function renderWSQs(){document.getElementById('ws-questions').innerHTML=question
 function renderQEditor(){document.getElementById('q-ed-list').innerHTML=questions.map((q,i)=>`<div class="qe-item"><div class="qe-num">Q${i+1}</div><input class="qe-in" value="${q.replace(/"/g,'&quot;')}" id="qe-${i}"><button class="qe-del" onclick="delQ(${i})" aria-label="삭제"><i class="ti ti-trash"></i></button></div>`).join('');}
 function addQ(){questions.push('새 질문을 입력하세요');renderQEditor();}
 function delQ(i){if(questions.length<=1){alert('최소 1개 이상이어야 합니다.');return;}questions.splice(i,1);renderQEditor();}
-function saveQs(){questions=Array.from(document.querySelectorAll('[id^="qe-"]')).map(el=>el.value.trim()).filter(v=>v);lsSet('questions',questions);const st=document.getElementById('q-save-st');st.className='smsg ok';st.textContent='✓ 저장됐습니다.';setTimeout(()=>st.style.display='none',3000);}
-function resetQs(){if(!confirm('초기화할까요?'))return;questions=[...DEF_QS];renderQEditor();lsSet('questions',questions);}
+async function saveQs(){
+  questions=Array.from(document.querySelectorAll('[id^="qe-"]')).map(el=>el.value.trim()).filter(v=>v);
+  lsSet('questions',questions);
+  if(sb){
+    await sb.from('settings').upsert({key:'questions',value:JSON.stringify(questions)},{onConflict:'key'});
+  }
+  const st=document.getElementById('q-save-st');st.className='smsg ok';st.textContent='✓ 저장됐습니다.';setTimeout(()=>st.style.display='none',3000);
+}
+async function resetQs(){
+  if(!confirm('초기화할까요?'))return;
+  questions=[...DEF_QS];renderQEditor();lsSet('questions',questions);
+  if(sb) await sb.from('settings').upsert({key:'questions',value:JSON.stringify(questions)},{onConflict:'key'});
+}
 
 async function saveWorksheet(){
   const n1=document.getElementById('ws-n1').value.trim(),id1=document.getElementById('ws-id1').value.trim(),c1=document.getElementById('ws-c1').value.trim(),n2=document.getElementById('ws-n2').value.trim(),id2=document.getElementById('ws-id2').value.trim();
   const st=document.getElementById('ws-status');
   if(!n1||!id1||!n2||!id2){st.className='smsg err';st.textContent='두 팀원의 이름과 학번을 모두 입력해 주세요.';return;}
+  if(!sb){st.className='smsg err';st.textContent='Supabase가 연결되지 않았습니다. index.html의 SB_URL과 SB_ANON 값을 설정해 주세요.';return;}
   showLoading('저장 중...');
   const answers={};questions.forEach((_,i)=>{const el=document.getElementById(`ws-q${i}`);if(el)answers[i]=el.value.trim();});
-  const data={n1,id1,c1,n2,id2,answers,ref1:document.getElementById('ws-ref1').value.trim(),ref2:document.getElementById('ws-ref2').value.trim(),submittedAt:new Date().toISOString()};
-  lsSet(`team:${id1}`,data);
-  st.className='smsg ok';st.textContent='✓ 활동지가 저장됐습니다!';
+  // 기존 행 찾기
+  const { data: existing } = await sb.from('submissions').select('id').eq('student_id1', id1).single();
+  const row = {
+    name1:n1, student_id1:id1, class1:c1,
+    name2:n2, student_id2:id2,
+    answers, reflection1:document.getElementById('ws-ref1').value.trim(),
+    reflection2:document.getElementById('ws-ref2').value.trim(),
+    submitted_at:new Date().toISOString()
+  };
+  if (existing) row.id = existing.id;
+  const { error } = await sb.from('submissions').upsert(row);
+  if (error) { st.className='smsg err'; st.textContent='저장 실패: '+error.message; }
+  else { st.className='smsg ok'; st.textContent='✓ 활동지가 저장됐습니다!'; }
   hideLoading();
 }
 async function refreshWorksheet(){
   const id1=document.getElementById('ws-id1').value.trim();if(!id1)return;
-  showLoading('불러오는 중...');await new Promise(r=>setTimeout(r,500));
+  showLoading('불러오는 중...');
   await loadQs();renderWSQs();
-  const d=lsGet(`team:${id1}`);
-  if(d){document.getElementById('ws-n1').value=d.n1||'';document.getElementById('ws-c1').value=d.c1||'';document.getElementById('ws-n2').value=d.n2||'';document.getElementById('ws-id2').value=d.id2||'';const ans=d.answers||{};questions.forEach((_,i)=>{const el=document.getElementById(`ws-q${i}`);if(el)el.value=ans[i]||'';});document.getElementById('ws-ref1').value=d.ref1||'';document.getElementById('ws-ref2').value=d.ref2||'';updateLabels();}
+  if(sb){
+    const {data,error}=await sb.from('submissions').select('*').eq('student_id1',id1).single();
+    if(data&&!error){
+      document.getElementById('ws-n1').value=data.name1||'';
+      document.getElementById('ws-c1').value=data.class1||'';
+      document.getElementById('ws-n2').value=data.name2||'';
+      document.getElementById('ws-id2').value=data.student_id2||'';
+      const ans=data.answers||{};
+      questions.forEach((_,i)=>{const el=document.getElementById(`ws-q${i}`);if(el)el.value=ans[i]||'';});
+      document.getElementById('ws-ref1').value=data.reflection1||'';
+      document.getElementById('ws-ref2').value=data.reflection2||'';
+      updateLabels();
+    }
+  }
   hideLoading();
 }
-async function refreshTeacher(){showLoading('새로고침 중...');await new Promise(r=>setTimeout(r,600));await renderTeacher();hideLoading();}
+async function refreshTeacher(){showLoading('새로고침 중...');await renderTeacher();hideLoading();}
 async function saveTeacher(){
   showLoading('저장 중...');
-  for(const s of submissions)for(const m of[1,2]){const el=document.getElementById(`sk-${s.id1}-${m}`);if(el){s[`seteuk${m}`]=el.value;lsSet(`team:${s.id1}`,s);}}
-  await new Promise(r=>setTimeout(r,400));hideLoading();
+  if(sb){
+    for(const s of submissions){
+      const updates={};
+      const el1=document.getElementById(`sk-${s.id1}-1`);
+      const el2=document.getElementById(`sk-${s.id1}-2`);
+      if(el1)updates.seteuk1=el1.value;
+      if(el2)updates.seteuk2=el2.value;
+      if(Object.keys(updates).length&&s._id){
+        await sb.from('submissions').update(updates).eq('id',s._id);
+      }
+    }
+  }
+  hideLoading();
 }
 function fakeDownload(btn){btn.innerHTML='<i class="ti ti-check"></i> 완료';btn.style.color='var(--green)';setTimeout(()=>{btn.innerHTML='<i class="ti ti-download"></i> 다운';btn.style.color='';},2000);}
 function dlExcel(){
@@ -1064,7 +1234,7 @@ function dlExcel(){
 }
 
 /* 초기화 */
-(()=>{ const r=lsGet('questions'); if(r)questions=r; setTimeout(loadSavedIP, 100); })();
+(()=>{ initSupabase(); const r=lsGet('questions'); if(r)questions=r; setTimeout(()=>{loadSavedIP();loadSbInputs();}, 100); })();
 
 /* ══════════════════════════════════════════
    파일 다운로드 함수
@@ -1097,6 +1267,71 @@ function dlAll() {
   next();
 }
 
+
+
+/* ── Supabase 설정 저장 ── */
+function saveSbConfig() {
+  const url  = document.getElementById('sb-url-input').value.trim();
+  const anon = document.getElementById('sb-anon-input').value.trim();
+  const msg  = document.getElementById('sb-config-msg');
+  if (!url || !anon) { msg.className='smsg err'; msg.textContent='URL과 키를 모두 입력해 주세요.'; return; }
+  localStorage.setItem('sb-url', url);
+  localStorage.setItem('sb-anon', anon);
+  try { sb = window.supabase.createClient(url, anon); } catch(e) { msg.className='smsg err'; msg.textContent='초기화 실패: '+e.message; return; }
+  msg.className='smsg ok'; msg.textContent='✓ 저장됐습니다. 연결 테스트를 눌러 확인해 보세요.';
+  updateSbBadge();
+}
+async function testSbConnection() {
+  const msg = document.getElementById('sb-config-msg');
+  if (!sb) { msg.className='smsg err'; msg.textContent='먼저 연결하기를 눌러주세요.'; return; }
+  msg.className='smsg info'; msg.textContent='연결 테스트 중...'; msg.style.display='block';
+  try {
+    const { error } = await sb.from('submissions').select('id').limit(1);
+    if (error) throw error;
+    msg.className='smsg ok'; msg.textContent='✓ Supabase 연결 성공! 이제 활동지 데이터가 자동으로 저장됩니다.';
+    updateSbBadge(true);
+  } catch(e) {
+    msg.className='smsg err'; msg.textContent='연결 실패: ' + (e.message || e);
+    updateSbBadge(false);
+  }
+}
+function updateSbHomeBadge() {
+  const el = document.getElementById('sb-home-status');
+  if (!el) return;
+  if (sb) {
+    el.style.background = '#EAF3DE'; el.style.color = '#27500A';
+    el.innerHTML = '<i class="ti ti-database" aria-hidden="true" style="font-size:12px"></i> DB 연결됨';
+  } else {
+    el.style.background = '#FCEBEB'; el.style.color = '#791F1F';
+    el.innerHTML = '<i class="ti ti-database-off" aria-hidden="true" style="font-size:12px"></i> DB 미연결 — index.html에 Supabase 키를 설정해 주세요';
+  }
+  // 설치 안내 탭 상태 업데이트
+  const icon = document.getElementById('sb-install-icon');
+  const title = document.getElementById('sb-install-title');
+  const desc = document.getElementById('sb-install-desc');
+  if (icon) icon.textContent = sb ? '✅' : '❌';
+  if (title) title.textContent = sb ? 'Supabase 연결됨' : 'Supabase 미연결';
+  if (desc) desc.style.color = sb ? 'var(--color-text-secondary)' : '#791F1F';
+}
+function updateSbBadge(ok) {
+  const badge = document.getElementById('sb-status-badge');
+  if (!badge) return;
+  const url = localStorage.getItem('sb-url');
+  if (ok === true) {
+    badge.style.background='#EAF3DE'; badge.style.color='#27500A'; badge.textContent='✓ 연결됨';
+  } else if (ok === false) {
+    badge.style.background='#FCEBEB'; badge.style.color='#791F1F'; badge.textContent='연결 실패';
+  } else if (url) {
+    badge.style.background='#FAEEDA'; badge.style.color='#633806'; badge.textContent='설정됨 (미확인)';
+  }
+}
+function loadSbInputs() {
+  const urlEl  = document.getElementById('sb-url-input');
+  const anonEl = document.getElementById('sb-anon-input');
+  if (urlEl)  urlEl.value  = localStorage.getItem('sb-url')  || '';
+  if (anonEl) anonEl.value = localStorage.getItem('sb-anon') || '';
+  updateSbBadge();
+}
 
 /* ── 서버 IP 저장 ── */
 function saveServerIP() {
