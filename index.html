@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>체육·정보 융합 수업</title>
+<title>스포츠 생활·빅데이터 분석 융합 수업</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Grotesk:wght@500;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -233,8 +233,8 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
 <!-- HOME -->
 <div id="home" class="screen active">
   <div class="hero">
-    <div class="hero-title">체육·정보 융합 수업</div>
-    <div class="hero-sub">AI 스마트워치로 배우는 운동 자세 교정</div>
+    <div class="hero-title">맞춤형 맨몸 운동 분석<br><span class="highlight">인공지능 만들기</span></div>
+    <div class="hero-sub">내 몸의 데이터로 직접 훈련시키는 AI 운동 코치</div>
     <div class="badge-row">
       <span class="bdg">하루 5차시</span>
       <span class="bdg">2인 1조</span>
@@ -775,7 +775,7 @@ const DEF_QS = [
   '티처블머신으로 학습시킨 자세 분류 모델의 정확도는 어떠했나요? 어떤 점이 어려웠나요?',
   '헥사보드에서 가속도/자이로 센서 데이터를 확인했을 때 어떤 점이 인상 깊었나요?',
   'AI 모델 판별 결과를 헥사보드에 전송하여 진동/LED 피드백이 구현되었을 때 느낀 점을 작성하세요.',
-  '오늘 수업을 통해 체육과 정보(AI)의 융합에서 새롭게 알게 된 점이나 더 탐구하고 싶은 점은?'
+  '오늘 수업을 통해 스포츠 생활과 빅데이터 분석의 융합에서 새롭게 알게 된 점이나 더 탐구하고 싶은 점은?'
 ];
 const AI_NOTES = {
   claude: 'Claude API가 연결되어 있습니다.',
@@ -1178,7 +1178,7 @@ async function genSeteuk(tid,m,btn){
   btn.disabled=true; const stEl=document.getElementById(`sk-st-${tid}-${m}`); stEl.textContent='생성 중...';
   const name=m===1?s.n1:s.n2,ans=s.answers||{},ref=m===1?s.ref1:s.ref2;
   const qaLines=questions.map((q,i)=>`Q${i+1} (${q}): ${ans[i]||'미작성'}`).join('\n');
-  const prompt=`다음은 체육·정보 융합 수업(AI 스마트워치로 운동 자세 교정, 하루 5차시)에서 2인 1조 팀이 제출한 활동지와 개인 소감문입니다.\n\n학생 이름: ${name}\n학번: ${m===1?s.id1:s.id2}\n팀원: ${m===1?s.n2:s.n1}\n\n[공동 활동지]\n${qaLines}\n\n[개인 소감문]\n${ref||'미작성'}\n\n위 내용을 바탕으로 이 학생의 학교생활기록부 세부능력 및 특기사항을 500자 이내로 작성해 주세요. 학생 개인의 활동, 역량, 성장에 초점을 맞추어 전문적인 어조로 작성하세요. 제목 없이 본문만 작성하세요.`;
+  const prompt=`다음은 스포츠 생활·빅데이터 분석 융합 수업(맞춤형 맨몸 운동 분석 인공지능 만들기, 하루 5차시)에서 2인 1조 팀이 제출한 활동지와 개인 소감문입니다.\n\n학생 이름: ${name}\n학번: ${m===1?s.id1:s.id2}\n팀원: ${m===1?s.n2:s.n1}\n\n[공동 활동지]\n${qaLines}\n\n[개인 소감문]\n${ref||'미작성'}\n\n위 내용을 바탕으로 이 학생의 학교생활기록부 세부능력 및 특기사항을 500자 이내로 작성해 주세요. 학생 개인의 활동, 역량, 성장에 초점을 맞추어 전문적인 어조로 작성하세요. 제목 없이 본문만 작성하세요.`;
   try{
     const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
     const data=await res.json();
