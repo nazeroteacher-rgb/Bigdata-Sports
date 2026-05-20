@@ -253,6 +253,18 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
 .view-result-card{background:var(--card);border:1px solid var(--border);border-radius:var(--rad-lg);padding:18px;box-shadow:var(--shadow)}
 .view-result-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border)}
 .view-avatar{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0}
+
+/* ── 세특 카드 좌우 분할 ── */
+.sk-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--rad-lg);margin-bottom:16px;box-shadow:var(--shadow);overflow:hidden}
+.sk-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg);border-bottom:1px solid var(--border)}
+.sk-body{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.sk-left{padding:16px;border-right:1px solid var(--border)}
+.sk-right{padding:16px;display:flex;flex-direction:column}
+.sk-section-title{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;margin-bottom:6px}
+.sk-qblock{background:var(--bg);border-radius:var(--rad);padding:9px 11px;margin-bottom:7px}
+.sk-qlabel{font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px}
+.sk-qanswer{font-size:12px;color:var(--text);line-height:1.6}
+@media(max-width:680px){.sk-body{grid-template-columns:1fr}.sk-left{border-right:none;border-bottom:1px solid var(--border)}}
 </style>
 </head>
 <body>
@@ -264,7 +276,7 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
 <div id="home" class="screen active">
   <div class="hero">
     <div class="hero-title">맞춤형 맨몸 운동 분석<br><span class="highlight">인공지능 만들기</span></div>
-    <div class="hero-sub">스포츠 생활·빅데이터 분석 융합 수업</div>
+    <div class="hero-sub">내 몸의 데이터로 직접 훈련시키는 AI 운동 코치</div>
     <div class="badge-row">
       <span class="bdg">하루 5차시</span>
       <span class="bdg">2인 1조</span>
@@ -1427,32 +1439,122 @@ function renderRfList(f) {
 }
 function filterRf(f,btn){rfFilter=f;document.querySelectorAll('[id^="rf-"]').forEach(b=>b.classList.remove('p'));btn.classList.add('p');renderRfList(f);}
 function renderSkList() {
-  const list=document.getElementById('sk-list'),empty=document.getElementById('sk-empty');
-  list.innerHTML='';
-  if(!submissions.length){empty.style.display='';return;} empty.style.display='none';
-  submissions.forEach(s=>[1,2].forEach(m=>{
-    const name=m===1?s.n1:s.n2, sid=m===1?s.id1:s.id2, tag=m===1?'m1':'m2';
-    const obsVal = m===1 ? (s.obs1||'') : (s.obs2||'');
-    const skVal  = m===1 ? (s.seteuk1||'') : (s.seteuk2||'');
-    const div=document.createElement('div'); div.className='sk-card';
-    const html = '<div class="sk-hdr">'
-      + '<div><span class="mtag '+tag+'" style="font-size:11px;margin-right:6px">'+(name||('팀원'+m))+'</span>'
-      + '<span style="font-weight:400;color:var(--text3);font-size:11px">'+(sid||'')+'</span></div>'
-      + '<div style="display:flex;align-items:center;gap:7px">'
-      + '<span id="sk-st-'+s.id1+'-'+m+'" style="font-size:11px;color:var(--text3)"></span>'
-      + '<button class="gen-btn" onclick="genSeteuk(\'' + s.id1 + '\',' + m + ',this)">'
-      + '<i class="ti ti-sparkles"></i> 세특 생성</button></div></div>'
-      + '<div style="font-size:11px;font-weight:600;color:var(--accent);margin:8px 0 4px">'
-      + '<i class="ti ti-eye" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>교사 관찰 내용</div>'
-      + '<textarea class="fta" id="obs-'+s.id1+'-'+m+'" style="min-height:52px;border-color:var(--accent);margin-bottom:10px"'
-      + ' placeholder="이 학생에 대한 관찰 내용을 입력하세요. 세특 생성 시 함께 반영됩니다.">'+obsVal+'</textarea>'
-      + '<div style="font-size:11px;font-weight:600;color:var(--primary);margin-bottom:4px">'
-      + '<i class="ti ti-certificate" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>생성된 세특</div>'
-      + '<textarea class="fta" id="sk-'+s.id1+'-'+m+'" style="min-height:80px"'
-      + ' placeholder="생성 버튼을 눌러 AI가 세특을 작성합니다...">'+skVal+'</textarea>';
-    div.innerHTML = html;
-    list.appendChild(div);
-  }));
+  const list = document.getElementById('sk-list');
+  const empty = document.getElementById('sk-empty');
+  list.innerHTML = '';
+  if (!submissions.length) { empty.style.display = ''; return; }
+  empty.style.display = 'none';
+
+  submissions.forEach(s => {
+    [1, 2].forEach(m => {
+      const name = m === 1 ? s.n1 : s.n2;
+      const sid  = m === 1 ? s.id1 : s.id2;
+      const tag  = m === 1 ? 'm1' : 'm2';
+      const obsVal = m === 1 ? (s.obs1||'') : (s.obs2||'');
+      const skVal  = m === 1 ? (s.seteuk1||'') : (s.seteuk2||'');
+      const ans = s.answers || {};
+      const ref = m === 1 ? (s.ref1||'') : (s.ref2||'');
+
+      const wrap = document.createElement('div');
+      wrap.className = 'sk-wrap';
+
+      // ── 헤더
+      const hdr = document.createElement('div');
+      hdr.className = 'sk-hdr';
+      hdr.innerHTML = '<div style="display:flex;align-items:center;gap:8px">'
+        + '<span class="mtag ' + tag + '" style="font-size:12px">' + (name||('팀원'+m)) + '</span>'
+        + '<span style="font-size:12px;color:var(--text3)">' + (sid||'') + '</span>'
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:7px">'
+        + '<span id="sk-st-' + s.id1 + '-' + m + '" style="font-size:11px;color:var(--text3)"></span>'
+        + '</div>';
+      wrap.appendChild(hdr);
+
+      // ── 좌우 분할 바디
+      const body = document.createElement('div');
+      body.className = 'sk-body';
+
+      // ── 왼쪽: 활동지 내용 + 소감문 + 관찰내용
+      const left = document.createElement('div');
+      left.className = 'sk-left';
+
+      // 활동지 질문 + 답변
+      const qTitle = document.createElement('div');
+      qTitle.className = 'sk-section-title';
+      qTitle.innerHTML = '<i class="ti ti-clipboard-text" style="font-size:12px;margin-right:4px"></i>활동지';
+      left.appendChild(qTitle);
+
+      questions.forEach((q, i) => {
+        const qblock = document.createElement('div');
+        qblock.className = 'sk-qblock';
+        qblock.innerHTML = '<div class="sk-qlabel">Q' + (i+1) + '. ' + q + '</div>'
+          + '<div class="sk-qanswer">' + (ans[i] || '<span style="color:var(--text3);font-size:11px">미작성</span>') + '</div>';
+        left.appendChild(qblock);
+      });
+
+      // 소감문
+      const refTitle = document.createElement('div');
+      refTitle.className = 'sk-section-title';
+      refTitle.style.marginTop = '12px';
+      refTitle.innerHTML = '<i class="ti ti-writing" style="font-size:12px;margin-right:4px"></i>개인 소감문';
+      left.appendChild(refTitle);
+
+      const refBlock = document.createElement('div');
+      refBlock.className = 'sk-qblock';
+      refBlock.innerHTML = '<div class="sk-qanswer">' + (ref || '<span style="color:var(--text3);font-size:11px">미작성</span>') + '</div>';
+      left.appendChild(refBlock);
+
+      // 교사 관찰 내용
+      const obsTitle = document.createElement('div');
+      obsTitle.className = 'sk-section-title';
+      obsTitle.style.cssText = 'margin-top:12px;color:var(--accent)';
+      obsTitle.innerHTML = '<i class="ti ti-eye" style="font-size:12px;margin-right:4px"></i>교사 관찰 내용';
+      left.appendChild(obsTitle);
+
+      const obsArea = document.createElement('textarea');
+      obsArea.className = 'fta';
+      obsArea.id = 'obs-' + s.id1 + '-' + m;
+      obsArea.style.cssText = 'min-height:70px;border-color:var(--accent);font-size:12px;margin-top:4px';
+      obsArea.placeholder = '이 학생에 대한 관찰 내용을 입력하세요. 세특 생성 시 함께 반영됩니다.';
+      obsArea.value = obsVal;
+      left.appendChild(obsArea);
+
+      body.appendChild(left);
+
+      // ── 오른쪽: 세특 완성
+      const right = document.createElement('div');
+      right.className = 'sk-right';
+
+      const skTitle = document.createElement('div');
+      skTitle.className = 'sk-section-title';
+      skTitle.style.color = 'var(--primary)';
+      skTitle.innerHTML = '<i class="ti ti-certificate" style="font-size:12px;margin-right:4px"></i>생성된 세특';
+      right.appendChild(skTitle);
+
+      const skArea = document.createElement('textarea');
+      skArea.className = 'fta';
+      skArea.id = 'sk-' + s.id1 + '-' + m;
+      skArea.style.cssText = 'flex:1;min-height:200px;font-size:12px;margin-top:4px;resize:vertical';
+      skArea.placeholder = '생성 버튼을 눌러 AI가 세특을 작성합니다...';
+      skArea.value = skVal;
+      right.appendChild(skArea);
+
+      const genRow = document.createElement('div');
+      genRow.style.cssText = 'display:flex;gap:8px;margin-top:8px;align-items:center';
+
+      const genBtn = document.createElement('button');
+      genBtn.className = 'abtn p';
+      genBtn.style.cssText = 'flex:1;justify-content:center;font-size:12px;padding:8px';
+      genBtn.innerHTML = '<i class="ti ti-sparkles"></i> 세특 자동 생성';
+      genBtn.addEventListener('click', function(){ genSeteuk(s.id1, m, genBtn); });
+      genRow.appendChild(genBtn);
+
+      right.appendChild(genRow);
+      body.appendChild(right);
+      wrap.appendChild(body);
+      list.appendChild(wrap);
+    });
+  });
 }
 async function genSeteuk(tid,m,btn){
   const s=submissions.find(x=>x.id1===tid); if(!s)return;
