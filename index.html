@@ -625,18 +625,41 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
 
   <!-- 세특 -->
   <div id="tab-seteuk" class="t-content hidden">
-    <div style="font-size:12px;color:var(--text2);margin-bottom:9px">AI를 선택하고 각 팀원별 '생성' 버튼을 누르세요</div>
-    <div class="ai-sel">
-      <button class="ai-chip sel" onclick="selAI('claude',this)">Claude</button>
-      <button class="ai-chip" onclick="selAI('gemini',this)">Gemini</button>
-      <button class="ai-chip" onclick="selAI('gpt',this)">ChatGPT</button>
+    <!-- 프롬프트 설정 카드 -->
+    <div class="card" style="margin-bottom:14px;border-left:3px solid var(--primary)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px">
+          <i class="ti ti-settings" style="font-size:14px;color:var(--primary)"></i>세특 생성 프롬프트 설정
+        </div>
+        <button class="abtn p" onclick="savePrompt()" style="font-size:11px;padding:5px 12px">
+          <i class="ti ti-device-floppy"></i> 저장
+        </button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:7px">저장된 프롬프트는 세특 생성 시 자동으로 사용됩니다. 비워두면 기본 프롬프트가 사용됩니다.</div>
+      <textarea class="fta" id="seteuk-prompt-input" style="min-height:80px;font-size:12px"
+        placeholder="예: 위 내용을 바탕으로 학교생활기록부 세부능력 및 특기사항을 500자 이내로 작성해 주세요..."></textarea>
+      <div id="prompt-save-msg" class="smsg" style="margin-top:6px"></div>
     </div>
-    <div style="font-size:11px;color:var(--text2);margin-bottom:12px" id="ai-note"></div>
-    <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="excel-btn" onclick="dlExcel()"><i class="ti ti-file-spreadsheet" style="font-size:15px"></i> 전체 엑셀 다운로드</button></div>
+    <!-- AI 선택 + 엑셀 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+      <div class="ai-sel" style="margin-bottom:0">
+        <button class="ai-chip sel" onclick="selAI('claude',this)">Claude</button>
+        <button class="ai-chip" onclick="selAI('gemini',this)">Gemini</button>
+        <button class="ai-chip" onclick="selAI('gpt',this)">ChatGPT</button>
+      </div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <button class="excel-btn" onclick="dlExcel()">
+          <i class="ti ti-file-spreadsheet" style="font-size:14px"></i> 활동지 엑셀
+        </button>
+        <button class="excel-btn" onclick="dlSeteukExcel()" style="border-color:var(--primary);color:var(--primary)">
+          <i class="ti ti-file-spreadsheet" style="font-size:14px"></i> 세특 엑셀
+        </button>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px" id="ai-note"></div>
     <div id="sk-list"></div>
     <div class="empty-st" id="sk-empty" style="display:none"><div class="empty-icon">✨</div><p>제출된 활동지가 있어야 세특을 생성할 수 있습니다</p></div>
   </div>
-
   <!-- 질문 관리 -->
   <div id="tab-qmgmt" class="t-content hidden">
     <div class="card">
@@ -1260,8 +1283,15 @@ function renderOverview() {
   });
 }
 function renderTeamSel() {
-  const sel = document.getElementById('team-sel'); sel.innerHTML = '<option value="">-- 팀을 선택하세요 --</option>';
-  submissions.forEach(s => { const o=document.createElement('option'); o.value=s.id1; o.textContent=`${s.n1||'?'} & ${s.n2||'?'} (${s.c1||'?'}반)`; sel.appendChild(o); });
+  const sel = document.getElementById('team-sel');
+  sel.innerHTML = '<option value="">-- 팀을 선택하세요 --</option>';
+  submissions.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id1;
+    o.textContent = `${s.id1}_${s.n1||'?'} & ${s.id2}_${s.n2||'?'}`;
+    sel.appendChild(o);
+  });
+} & ${s.n2||'?'} (${s.c1||'?'}반)`; sel.appendChild(o); });
 }
 function viewTeam(id1) { switchTab(document.querySelectorAll('.t-tab')[2],'tab-detail'); document.getElementById('team-sel').value=id1; showTeamDetail(); }
 function showTeamDetail() {
@@ -1295,23 +1325,50 @@ function renderSkList() {
   submissions.forEach(s=>[1,2].forEach(m=>{
     const name=m===1?s.n1:s.n2,sid=m===1?s.id1:s.id2,tag=m===1?'m1':'m2';
     const div=document.createElement('div'); div.className='sk-card';
-    div.innerHTML=`<div class="sk-hdr"><div><span class="mtag ${tag}" style="font-size:11px;margin-right:6px">${name||`팀원${m}`}</span><span style="font-weight:400;color:var(--text2);font-size:11px">${sid||''}</span></div><div style="display:flex;align-items:center;gap:7px"><span id="sk-st-${s.id1}-${m}" style="font-size:11px;color:var(--text2)"></span><button class="gen-btn" onclick="genSeteuk('${s.id1}',${m},this)"><i class="ti ti-sparkles"></i> 생성</button></div></div><textarea class="fta" id="sk-${s.id1}-${m}" style="min-height:72px" placeholder="'생성' 버튼을 눌러 AI가 세특을 작성합니다...">${s[`seteuk${m}`]||''}</textarea>`;
+    div.innerHTML=`
+      <div class="sk-hdr">
+        <div>
+          <span class="mtag ${tag}" style="font-size:11px;margin-right:6px">${name||'팀원'+m}</span>
+          <span style="font-weight:400;color:var(--text3);font-size:11px">${sid||''}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px">
+          <span id="sk-st-${s.id1}-${m}" style="font-size:11px;color:var(--text3)"></span>
+          <button class="gen-btn" onclick="genSeteuk('${s.id1}',${m},this)">
+            <i class="ti ti-sparkles"></i> 세특 생성
+          </button>
+        </div>
+      </div>
+      <div style="font-size:11px;font-weight:600;color:var(--accent);margin:8px 0 4px">
+        <i class="ti ti-eye" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>교사 관찰 내용
+      </div>
+      <textarea class="fta" id="obs-${s.id1}-${m}" style="min-height:52px;border-color:var(--accent);margin-bottom:10px"
+        placeholder="이 학생에 대한 관찰 내용을 입력하세요. 세특 생성 시 함께 반영됩니다.">${s['obs'+m]||''}</textarea>
+      <div style="font-size:11px;font-weight:600;color:var(--primary);margin-bottom:4px">
+        <i class="ti ti-certificate" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>생성된 세특
+      </div>
+      <textarea class="fta" id="sk-${s.id1}-${m}" style="min-height:80px"
+        placeholder="생성 버튼을 눌러 AI가 세특을 작성합니다...">${s['seteuk'+m]||''}</textarea>`;
     list.appendChild(div);
   }));
 }
 async function genSeteuk(tid,m,btn){
   const s=submissions.find(x=>x.id1===tid); if(!s)return;
-  btn.disabled=true; const stEl=document.getElementById(`sk-st-${tid}-${m}`); stEl.textContent='생성 중...';
-  const name=m===1?s.n1:s.n2,ans=s.answers||{},ref=m===1?s.ref1:s.ref2;
+  btn.disabled=true;
+  const stEl=document.getElementById(`sk-st-${tid}-${m}`); stEl.textContent='생성 중...';
+  const name=m===1?s.n1:s.n2, ans=s.answers||{}, ref=m===1?s.ref1:s.ref2;
+  const obs=document.getElementById(`obs-${tid}-${m}`)?.value.trim()||'없음';
+  const savedPrompt=localStorage.getItem('seteuk-prompt')||'위 내용을 바탕으로 이 학생의 학교생활기록부 세부능력 및 특기사항을 500자 이내로 작성해 주세요. 학생 개인의 활동, 역량, 성장에 초점을 맞추어 전문적인 어조로 작성하세요. 제목 없이 본문만 작성하세요.';
   const qaLines=questions.map((q,i)=>`Q${i+1} (${q}): ${ans[i]||'미작성'}`).join('\n');
-  const prompt=`다음은 스포츠 생활·빅데이터 분석 융합 수업(맞춤형 맨몸 운동 분석 인공지능 만들기, 하루 5차시)에서 2인 1조 팀이 제출한 활동지와 개인 소감문입니다.\n\n학생 이름: ${name}\n학번: ${m===1?s.id1:s.id2}\n팀원: ${m===1?s.n2:s.n1}\n\n[공동 활동지]\n${qaLines}\n\n[개인 소감문]\n${ref||'미작성'}\n\n위 내용을 바탕으로 이 학생의 학교생활기록부 세부능력 및 특기사항을 500자 이내로 작성해 주세요. 학생 개인의 활동, 역량, 성장에 초점을 맞추어 전문적인 어조로 작성하세요. 제목 없이 본문만 작성하세요.`;
+  const prompt=`다음은 스포츠 생활·빅데이터 분석 융합 수업(맞춤형 맨몸 운동 분석 인공지능 만들기, 하루 5차시)에서 2인 1조 팀이 제출한 활동지와 개인 소감문입니다.\n\n학생 이름: ${name}\n학번: ${m===1?s.id1:s.id2}\n팀원: ${m===1?s.n2:s.n1}\n\n[공동 활동지]\n${qaLines}\n\n[개인 소감문]\n${ref||'미작성'}\n\n[교사 관찰 내용]\n${obs}\n\n${savedPrompt}`;
   try{
     const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
     const data=await res.json();
     const text=data.text||'생성 실패';
     document.getElementById(`sk-${tid}-${m}`).value=text;
     s[`seteuk${m}`]=text;
-    if(sb&&s._id){await sb.from('submissions').update({[`seteuk${m}`]:text}).eq('id',s._id);}
+    const obsVal=document.getElementById(`obs-${tid}-${m}`)?.value.trim()||'';
+    s[`obs${m}`]=obsVal;
+    if(sb&&s._id){await sb.from('submissions').update({[`seteuk${m}`]:text,[`obs${m}`]:obsVal,updated_at:new Date().toISOString()}).eq('id',s._id);}
     stEl.textContent='✓ 완료'; setTimeout(()=>stEl.textContent='',2500);
   }catch(e){stEl.textContent='오류 발생';}
   btn.disabled=false;
@@ -1573,6 +1630,33 @@ async function saveTeacher(){
 function fakeDownload(btn){btn.innerHTML='<i class="ti ti-check"></i> 완료';btn.style.color='var(--green)';setTimeout(()=>{btn.innerHTML='<i class="ti ti-download"></i> 다운';btn.style.color='';},2000);}
 function dlExcel(){
   if(!submissions.length){alert('제출된 활동지가 없습니다.');return;}
+
+function savePrompt() {
+  const val = document.getElementById('seteuk-prompt-input').value.trim();
+  localStorage.setItem('seteuk-prompt', val);
+  const msg = document.getElementById('prompt-save-msg');
+  msg.className = 'smsg ok'; msg.textContent = '✓ 프롬프트가 저장되었습니다. 이후 세특 생성 시 자동 적용됩니다.';
+  setTimeout(() => msg.style.display = 'none', 3000);
+}
+
+function dlSeteukExcel() {
+  if(!submissions.length){alert('제출된 활동지가 없습니다.');return;}
+  const hdr=['학번1','팀원1','학번2','팀원2',...questions.map((q,i)=>`Q${i+1}`),'팀원1 소감문','팀원1 관찰내용','팀원1 세특','팀원2 소감문','팀원2 관찰내용','팀원2 세특'];
+  const rows=submissions.map(s=>{
+    const ans=s.answers||{};
+    // 현재 textarea 값 우선 사용 (방금 수정했을 수 있으므로)
+    const obs1=document.getElementById(`obs-${s.id1}-1`)?.value||s.obs1||'';
+    const obs2=document.getElementById(`obs-${s.id1}-2`)?.value||s.obs2||'';
+    const sk1=document.getElementById(`sk-${s.id1}-1`)?.value||s.seteuk1||'';
+    const sk2=document.getElementById(`sk-${s.id1}-2`)?.value||s.seteuk2||'';
+    return[s.id1,s.n1,s.id2,s.n2,...questions.map((_,i)=>ans[i]||''),s.ref1||'',obs1,sk1,s.ref2||'',obs2,sk2];
+  });
+  const wb=XLSX.utils.book_new();
+  const ws2=XLSX.utils.aoa_to_sheet([hdr,...rows]);
+  ws2['!cols']=[{wch:8},{wch:10},{wch:8},{wch:10},...questions.map(()=>({wch:24})),{wch:28},{wch:24},{wch:55},{wch:28},{wch:24},{wch:55}];
+  XLSX.utils.book_append_sheet(wb,ws2,'세특');
+  XLSX.writeFile(wb,`세특_${new Date().toLocaleDateString('ko-KR').replace(/\. /g,'-').replace('.','')}.xlsx`);
+}
   const hdr=['팀원1','학번1','팀원2','학번2','반',...questions.map((q,i)=>`Q${i+1}`),'팀원1 소감문','팀원2 소감문','팀원1 세특','팀원2 세특'];
   const rows=submissions.map(s=>{const ans=s.answers||{};return[s.n1,s.id1,s.n2,s.id2,s.c1,...questions.map((_,i)=>ans[i]||''),s.ref1||'',s.ref2||'',s.seteuk1||'',s.seteuk2||''];});
   const wb=XLSX.utils.book_new(),ws2=XLSX.utils.aoa_to_sheet([hdr,...rows]);
