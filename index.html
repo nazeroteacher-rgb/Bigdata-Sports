@@ -889,6 +889,16 @@ create policy "allow all" on settings for all using (true) with check (true);</p
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+window.onerror = function(msg, src, line, col, err) {
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;bottom:10px;left:10px;right:10px;background:#FEF2F2;color:#991B1B;padding:10px 14px;border-radius:8px;font-size:12px;z-index:99999;border:1px solid #FECACA';
+  d.textContent = 'JS 오류: ' + msg + ' (줄 ' + line + ')';
+  document.body.appendChild(d);
+  setTimeout(()=>d.remove(), 8000);
+  return false;
+};
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 /* ══════════════════════════════════════════
@@ -964,10 +974,12 @@ async function go(id) {
     await loadQs();
     renderWSQs();
     updateLabels();
-    // 작성 탭 초기화
-    document.getElementById('ws-panel-write').style.display = '';
-    document.getElementById('ws-panel-view').style.display  = 'none';
-    document.getElementById('ws-panel-edit').style.display  = 'none';
+    const wp = document.getElementById('ws-panel-write');
+    const vp = document.getElementById('ws-panel-view');
+    const ep = document.getElementById('ws-panel-edit');
+    if(wp) wp.style.display = '';
+    if(vp) vp.style.display = 'none';
+    if(ep) ep.style.display = 'none';
     document.querySelectorAll('.ws-tab').forEach((b,i) => b.classList.toggle('active', i===0));
   }
   if (id === 'teacher')    { await renderTeacher(); }
@@ -985,6 +997,10 @@ function switchTab(btn, id) {
   document.querySelectorAll('.t-content').forEach(t => t.classList.add('hidden'));
   document.getElementById(id).classList.remove('hidden');
   if (id === 'tab-qmgmt') renderQEditor();
+  if (id === 'tab-seteuk') {
+    const inp = document.getElementById('seteuk-prompt-input');
+    if (inp) inp.value = localStorage.getItem('seteuk-prompt') || '';
+  }
 }
 function selAI(ai, btn) {
   selectedAI = ai;
@@ -1273,12 +1289,27 @@ function renderOverview() {
   document.getElementById('st-r1').textContent = submissions.filter(s=>s.ref1&&s.ref1.trim()).length;
   document.getElementById('st-r2').textContent = submissions.filter(s=>s.ref2&&s.ref2.trim()).length;
   body.innerHTML = '';
-  if (!submissions.length) { empty.style.display=''; return; }
+  if (!submissions.length) { empty.style.display = ''; return; }
   empty.style.display = 'none';
   submissions.forEach((s, i) => {
-    const h1=s.ref1&&s.ref1.trim(), h2=s.ref2&&s.ref2.trim();
+    const h1 = s.ref1 && s.ref1.trim(), h2 = s.ref2 && s.ref2.trim();
+    const badge1 = h1
+      ? '<span class="s-ok">' + (s.n1||'1') + ' 완료</span>'
+      : '<span class="s-no">' + (s.n1||'1') + ' 미제출</span>';
+    const badge2 = h2
+      ? '<span class="s-ok">' + (s.n2||'2') + ' 완료</span>'
+      : '<span class="s-no">' + (s.n2||'2') + ' 미제출</span>';
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${i+1}</td><td><strong>${s.n1||'–'}</strong></td><td><strong>${s.n2||'–'}</strong></td><td>${s.id1||'–'}</td><td>${s.id2||'–'}</td><td>${s.c1||'–'}</td><td><span class="s-ok"><i class="ti ti-check" style="font-size:10px"></i> 제출</span></td><td style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">${h1?`<span class="s-ok">${s.n1} 완료</span>`:`<span class="s-no">${s.n1} 미제출</span>`}${h2?`<span class="s-ok">${s.n2} 완료</span>`:`<span class="s-no">${s.n2} 미제출</span>`}<button class="vbtn" onclick="viewTeam('${s.id1}')">보기</button></td>`;
+    tr.innerHTML = '<td>' + (i+1) + '</td>'
+      + '<td><strong>' + (s.n1||'-') + '</strong></td>'
+      + '<td><strong>' + (s.n2||'-') + '</strong></td>'
+      + '<td>' + (s.id1||'-') + '</td>'
+      + '<td>' + (s.id2||'-') + '</td>'
+      + '<td>' + (s.c1||'-') + '</td>'
+      + '<td><span class="s-ok"><i class="ti ti-check" style="font-size:10px"></i> 제출</span></td>'
+      + '<td style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">'
+      + badge1 + badge2
+      + '<button class="vbtn" onclick="viewTeam('' + s.id1 + '')">보기</button></td>';
     body.appendChild(tr);
   });
 }
@@ -1288,7 +1319,7 @@ function renderTeamSel() {
   submissions.forEach(s => {
     const o = document.createElement('option');
     o.value = s.id1;
-    o.textContent = `${s.id1}_${s.n1||'?'} & ${s.id2}_${s.n2||'?'}`;
+    o.textContent = (s.id1||'?')+'_'+(s.n1||'?')+' & '+(s.id2||'?')+'_'+(s.n2||'?');
     sel.appendChild(o);
   });
 } & ${s.n2||'?'} (${s.c1||'?'}반)`; sel.appendChild(o); });
@@ -1323,52 +1354,81 @@ function renderSkList() {
   list.innerHTML='';
   if(!submissions.length){empty.style.display='';return;} empty.style.display='none';
   submissions.forEach(s=>[1,2].forEach(m=>{
-    const name=m===1?s.n1:s.n2,sid=m===1?s.id1:s.id2,tag=m===1?'m1':'m2';
+    const name=m===1?s.n1:s.n2, sid=m===1?s.id1:s.id2, tag=m===1?'m1':'m2';
+    const obsVal = m===1 ? (s.obs1||'') : (s.obs2||'');
+    const skVal  = m===1 ? (s.seteuk1||'') : (s.seteuk2||'');
     const div=document.createElement('div'); div.className='sk-card';
-    div.innerHTML=`
-      <div class="sk-hdr">
-        <div>
-          <span class="mtag ${tag}" style="font-size:11px;margin-right:6px">${name||'팀원'+m}</span>
-          <span style="font-weight:400;color:var(--text3);font-size:11px">${sid||''}</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:7px">
-          <span id="sk-st-${s.id1}-${m}" style="font-size:11px;color:var(--text3)"></span>
-          <button class="gen-btn" onclick="genSeteuk('${s.id1}',${m},this)">
-            <i class="ti ti-sparkles"></i> 세특 생성
-          </button>
-        </div>
-      </div>
-      <div style="font-size:11px;font-weight:600;color:var(--accent);margin:8px 0 4px">
-        <i class="ti ti-eye" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>교사 관찰 내용
-      </div>
-      <textarea class="fta" id="obs-${s.id1}-${m}" style="min-height:52px;border-color:var(--accent);margin-bottom:10px"
-        placeholder="이 학생에 대한 관찰 내용을 입력하세요. 세특 생성 시 함께 반영됩니다.">${s['obs'+m]||''}</textarea>
-      <div style="font-size:11px;font-weight:600;color:var(--primary);margin-bottom:4px">
-        <i class="ti ti-certificate" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>생성된 세특
-      </div>
-      <textarea class="fta" id="sk-${s.id1}-${m}" style="min-height:80px"
-        placeholder="생성 버튼을 눌러 AI가 세특을 작성합니다...">${s['seteuk'+m]||''}</textarea>`;
+    const html = '<div class="sk-hdr">'
+      + '<div><span class="mtag '+tag+'" style="font-size:11px;margin-right:6px">'+(name||('팀원'+m))+'</span>'
+      + '<span style="font-weight:400;color:var(--text3);font-size:11px">'+(sid||'')+'</span></div>'
+      + '<div style="display:flex;align-items:center;gap:7px">'
+      + '<span id="sk-st-'+s.id1+'-'+m+'" style="font-size:11px;color:var(--text3)"></span>'
+      + '<button class="gen-btn" onclick="genSeteuk(''+s.id1+'','+m+',this)">'
+      + '<i class="ti ti-sparkles"></i> 세특 생성</button></div></div>'
+      + '<div style="font-size:11px;font-weight:600;color:var(--accent);margin:8px 0 4px">'
+      + '<i class="ti ti-eye" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>교사 관찰 내용</div>'
+      + '<textarea class="fta" id="obs-'+s.id1+'-'+m+'" style="min-height:52px;border-color:var(--accent);margin-bottom:10px"'
+      + ' placeholder="이 학생에 대한 관찰 내용을 입력하세요. 세특 생성 시 함께 반영됩니다.">'+obsVal+'</textarea>'
+      + '<div style="font-size:11px;font-weight:600;color:var(--primary);margin-bottom:4px">'
+      + '<i class="ti ti-certificate" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>생성된 세특</div>'
+      + '<textarea class="fta" id="sk-'+s.id1+'-'+m+'" style="min-height:80px"'
+      + ' placeholder="생성 버튼을 눌러 AI가 세특을 작성합니다...">'+skVal+'</textarea>';
+    div.innerHTML = html;
     list.appendChild(div);
   }));
 }
 async function genSeteuk(tid,m,btn){
   const s=submissions.find(x=>x.id1===tid); if(!s)return;
   btn.disabled=true;
-  const stEl=document.getElementById(`sk-st-${tid}-${m}`); stEl.textContent='생성 중...';
+  const stEl=document.getElementById('sk-st-'+tid+'-'+m);
+  stEl.textContent='생성 중...';
   const name=m===1?s.n1:s.n2, ans=s.answers||{}, ref=m===1?s.ref1:s.ref2;
-  const obs=document.getElementById(`obs-${tid}-${m}`)?.value.trim()||'없음';
+  const obsEl=document.getElementById('obs-'+tid+'-'+m);
+  const obs=obsEl?obsEl.value.trim():'없음';
   const savedPrompt=localStorage.getItem('seteuk-prompt')||'위 내용을 바탕으로 이 학생의 학교생활기록부 세부능력 및 특기사항을 500자 이내로 작성해 주세요. 학생 개인의 활동, 역량, 성장에 초점을 맞추어 전문적인 어조로 작성하세요. 제목 없이 본문만 작성하세요.';
-  const qaLines=questions.map((q,i)=>`Q${i+1} (${q}): ${ans[i]||'미작성'}`).join('\n');
-  const prompt=`다음은 스포츠 생활·빅데이터 분석 융합 수업(맞춤형 맨몸 운동 분석 인공지능 만들기, 하루 5차시)에서 2인 1조 팀이 제출한 활동지와 개인 소감문입니다.\n\n학생 이름: ${name}\n학번: ${m===1?s.id1:s.id2}\n팀원: ${m===1?s.n2:s.n1}\n\n[공동 활동지]\n${qaLines}\n\n[개인 소감문]\n${ref||'미작성'}\n\n[교사 관찰 내용]\n${obs}\n\n${savedPrompt}`;
+  const qaLines=questions.map((q,i)=>'Q'+(i+1)+' ('+q+'): '+(ans[i]||'미작성')).join('
+');
+  const sid=m===1?s.id1:s.id2, partner=m===1?s.n2:s.n1;
+  const prompt='다음은 스포츠 생활·빅데이터 분석 융합 수업(맞춤형 맨몸 운동 분석 인공지능 만들기, 하루 5차시)에서 2인 1조 팀이 제출한 활동지와 개인 소감문입니다.
+
+'
+    +'학생 이름: '+name+'
+학번: '+sid+'
+팀원: '+partner+'
+
+'
+    +'[공동 활동지]
+'+qaLines+'
+
+'
+    +'[개인 소감문]
+'+(ref||'미작성')+'
+
+'
+    +'[교사 관찰 내용]
+'+obs+'
+
+'
+    +savedPrompt;
   try{
-    const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+    });
     const data=await res.json();
-    const text=data.text||'생성 실패';
-    document.getElementById(`sk-${tid}-${m}`).value=text;
-    s[`seteuk${m}`]=text;
-    const obsVal=document.getElementById(`obs-${tid}-${m}`)?.value.trim()||'';
-    s[`obs${m}`]=obsVal;
-    if(sb&&s._id){await sb.from('submissions').update({[`seteuk${m}`]:text,[`obs${m}`]:obsVal,updated_at:new Date().toISOString()}).eq('id',s._id);}
+    const text=data.content?.find(c=>c.type==='text')?.text||'생성 실패';
+    const skEl=document.getElementById('sk-'+tid+'-'+m);
+    if(skEl) skEl.value=text;
+    s['seteuk'+m]=text;
+    const obsEl2=document.getElementById('obs-'+tid+'-'+m);
+    const obsVal=obsEl2?obsEl2.value.trim():'';
+    s['obs'+m]=obsVal;
+    if(sb&&s._id){
+      const upd={updated_at:new Date().toISOString()};
+      upd['seteuk'+m]=text; upd['obs'+m]=obsVal;
+      await sb.from('submissions').update(upd).eq('id',s._id);
+    }
     stEl.textContent='✓ 완료'; setTimeout(()=>stEl.textContent='',2500);
   }catch(e){stEl.textContent='오류 발생';}
   btn.disabled=false;
@@ -1612,18 +1672,20 @@ async function refreshWorksheet() {}
 
 async function refreshTeacher(){showLoading('새로고침 중...');await renderTeacher();hideLoading();}
 async function saveTeacher(){
+  if(!sb){alert('Supabase가 연결되지 않았습니다.');return;}
   showLoading('저장 중...');
-  if(sb){
-    for(const s of submissions){
-      const updates={};
-      const el1=document.getElementById(`sk-${s.id1}-1`);
-      const el2=document.getElementById(`sk-${s.id1}-2`);
-      if(el1)updates.seteuk1=el1.value;
-      if(el2)updates.seteuk2=el2.value;
-      if(Object.keys(updates).length&&s._id){
-        await sb.from('submissions').update(updates).eq('id',s._id);
-      }
-    }
+  for(const s of submissions){
+    if(!s._id)continue;
+    const el1=document.getElementById('sk-'+s.id1+'-1');
+    const el2=document.getElementById('sk-'+s.id1+'-2');
+    const ob1=document.getElementById('obs-'+s.id1+'-1');
+    const ob2=document.getElementById('obs-'+s.id1+'-2');
+    const upd={updated_at:new Date().toISOString()};
+    if(el1)upd.seteuk1=el1.value;
+    if(el2)upd.seteuk2=el2.value;
+    if(ob1)upd.obs1=ob1.value;
+    if(ob2)upd.obs2=ob2.value;
+    try{await sb.from('submissions').update(upd).eq('id',s._id);}catch(e){}
   }
   hideLoading();
 }
@@ -1641,28 +1703,33 @@ function savePrompt() {
 
 function dlSeteukExcel() {
   if(!submissions.length){alert('제출된 활동지가 없습니다.');return;}
-  const hdr=['학번1','팀원1','학번2','팀원2',...questions.map((q,i)=>`Q${i+1}`),'팀원1 소감문','팀원1 관찰내용','팀원1 세특','팀원2 소감문','팀원2 관찰내용','팀원2 세특'];
+  const hdr=['학번1','팀원1','학번2','팀원2',...questions.map((q,i)=>'Q'+(i+1)),'팀원1 소감문','팀원1 관찰내용','팀원1 세특','팀원2 소감문','팀원2 관찰내용','팀원2 세특'];
   const rows=submissions.map(s=>{
     const ans=s.answers||{};
-    // 현재 textarea 값 우선 사용 (방금 수정했을 수 있으므로)
-    const obs1=document.getElementById(`obs-${s.id1}-1`)?.value||s.obs1||'';
-    const obs2=document.getElementById(`obs-${s.id1}-2`)?.value||s.obs2||'';
-    const sk1=document.getElementById(`sk-${s.id1}-1`)?.value||s.seteuk1||'';
-    const sk2=document.getElementById(`sk-${s.id1}-2`)?.value||s.seteuk2||'';
+    const obs1El=document.getElementById('obs-'+s.id1+'-1');
+    const obs2El=document.getElementById('obs-'+s.id1+'-2');
+    const sk1El=document.getElementById('sk-'+s.id1+'-1');
+    const sk2El=document.getElementById('sk-'+s.id1+'-2');
+    const obs1=obs1El?obs1El.value:(s.obs1||'');
+    const obs2=obs2El?obs2El.value:(s.obs2||'');
+    const sk1=sk1El?sk1El.value:(s.seteuk1||'');
+    const sk2=sk2El?sk2El.value:(s.seteuk2||'');
     return[s.id1,s.n1,s.id2,s.n2,...questions.map((_,i)=>ans[i]||''),s.ref1||'',obs1,sk1,s.ref2||'',obs2,sk2];
   });
   const wb=XLSX.utils.book_new();
   const ws2=XLSX.utils.aoa_to_sheet([hdr,...rows]);
   ws2['!cols']=[{wch:8},{wch:10},{wch:8},{wch:10},...questions.map(()=>({wch:24})),{wch:28},{wch:24},{wch:55},{wch:28},{wch:24},{wch:55}];
   XLSX.utils.book_append_sheet(wb,ws2,'세특');
-  XLSX.writeFile(wb,`세특_${new Date().toLocaleDateString('ko-KR').replace(/\. /g,'-').replace('.','')}.xlsx`);
+  const fname='세특_'+new Date().toLocaleDateString('ko-KR').split('.').join('-').replace(/\s/g,'')+'.xlsx';
+  XLSX.writeFile(wb,fname);
+}.xlsx`);
 }
   const hdr=['팀원1','학번1','팀원2','학번2','반',...questions.map((q,i)=>`Q${i+1}`),'팀원1 소감문','팀원2 소감문','팀원1 세특','팀원2 세특'];
   const rows=submissions.map(s=>{const ans=s.answers||{};return[s.n1,s.id1,s.n2,s.id2,s.c1,...questions.map((_,i)=>ans[i]||''),s.ref1||'',s.ref2||'',s.seteuk1||'',s.seteuk2||''];});
   const wb=XLSX.utils.book_new(),ws2=XLSX.utils.aoa_to_sheet([hdr,...rows]);
   ws2['!cols']=[{wch:10},{wch:10},{wch:10},{wch:10},{wch:6},...questions.map(()=>({wch:26})),{wch:30},{wch:30},{wch:55},{wch:55}];
   XLSX.utils.book_append_sheet(wb,ws2,'세특');
-  XLSX.writeFile(wb,`세특_${new Date().toLocaleDateString('ko-KR').replace(/\. /g,'-').replace('.','')}.xlsx`);
+  XLSX.writeFile(wb,'세특_'+new Date().toLocaleDateString('ko-KR').split('.').join('-').replace(/ /g,'')+'.xlsx');
 }
 
 /* 초기화 */
