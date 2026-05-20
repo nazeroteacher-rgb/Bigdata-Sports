@@ -230,6 +230,19 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
 .ws-mode-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;flex-shrink:0}
 .ws-mode-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px}
 .ws-mode-desc{font-size:12px;color:var(--text3);line-height:1.4}
+
+/* ── 활동지 메뉴 버튼 ── */
+.ws-menu-btn{width:100%;background:var(--card);border:1px solid var(--border);border-radius:var(--rad-lg);padding:18px;cursor:pointer;display:flex;align-items:center;gap:16px;box-shadow:var(--shadow);transition:all .18s;font-family:inherit;text-align:left}
+.ws-menu-btn:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.ws-menu-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;flex-shrink:0}
+.ws-menu-text{flex:1}
+.ws-menu-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px}
+.ws-menu-desc{font-size:12px;color:var(--text3);line-height:1.4}
+.ws-menu-arr{color:var(--text3);font-size:18px;flex-shrink:0}
+/* 조회 결과 카드 */
+.view-result-card{background:var(--card);border:1px solid var(--border);border-radius:var(--rad-lg);padding:18px;box-shadow:var(--shadow)}
+.view-result-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.view-avatar{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#0066FF,#0047CC);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -294,53 +307,46 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
 <!-- WORKSHEET -->
 <div id="worksheet" class="screen">
   <div class="topbar">
-    <button class="back-btn" onclick="go('home')"><i class="ti ti-arrow-left"></i> 홈</button>
-    <div><div class="tb-title">수업 활동지</div><div class="tb-sub" id="ws-mode-label">모드 선택</div></div>
-    <div class="tb-actions" id="ws-topbar-actions"></div>
+    <button class="back-btn" onclick="wsGoHome()"><i class="ti ti-arrow-left"></i> 홈</button>
+    <div><div class="tb-title" id="ws-tb-title">수업 활동지</div><div class="tb-sub" id="ws-tb-sub">작성 또는 조회하기</div></div>
+    <div class="tb-actions" id="ws-tb-actions"></div>
   </div>
 
-  <!-- 모드 선택 화면 -->
-  <div id="ws-mode-select" class="content" style="max-width:500px">
-    <div style="text-align:center;padding:16px 0 24px">
-      <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">무엇을 하시겠어요?</div>
-      <div style="font-size:12px;color:var(--text3)">아래에서 원하는 항목을 선택하세요</div>
+  <!-- ① 모드 선택 -->
+  <div id="ws-landing" class="content" style="max-width:480px;padding-top:32px">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:22px;margin-bottom:8px">📋</div>
+      <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px">활동지 메뉴</div>
+      <div style="font-size:12px;color:var(--text3)">원하는 항목을 선택하세요</div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:11px">
-      <div class="ws-mode-card" onclick="wsSetMode('write')">
-        <div class="ws-mode-icon" style="background:linear-gradient(135deg,#0066FF,#0047CC)">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <!-- 작성하기 -->
+      <button class="ws-menu-btn" onclick="wsMode('write')">
+        <div class="ws-menu-icon" style="background:linear-gradient(135deg,#0066FF,#0047CC)">
           <i class="ti ti-pencil-plus"></i>
         </div>
-        <div>
-          <div class="ws-mode-name">활동지 작성하기</div>
-          <div class="ws-mode-desc">새로운 활동지를 작성하고 제출합니다</div>
+        <div class="ws-menu-text">
+          <div class="ws-menu-name">활동지 작성하기</div>
+          <div class="ws-menu-desc">새 활동지를 작성하고 제출합니다</div>
         </div>
-        <i class="ti ti-chevron-right" style="margin-left:auto;color:var(--text3);font-size:18px"></i>
-      </div>
-      <div class="ws-mode-card" onclick="wsSetMode('edit')">
-        <div class="ws-mode-icon" style="background:linear-gradient(135deg,#00C49A,#00A87E)">
-          <i class="ti ti-edit"></i>
-        </div>
-        <div>
-          <div class="ws-mode-name">활동지 수정하기</div>
-          <div class="ws-mode-desc">제출한 활동지를 불러와서 수정합니다</div>
-        </div>
-        <i class="ti ti-chevron-right" style="margin-left:auto;color:var(--text3);font-size:18px"></i>
-      </div>
-      <div class="ws-mode-card" onclick="wsSetMode('search')">
-        <div class="ws-mode-icon" style="background:linear-gradient(135deg,#7B5CFA,#5A3DD8)">
+        <i class="ti ti-chevron-right ws-menu-arr"></i>
+      </button>
+      <!-- 조회·수정하기 -->
+      <button class="ws-menu-btn" onclick="wsMode('view')">
+        <div class="ws-menu-icon" style="background:linear-gradient(135deg,#00C49A,#00957A)">
           <i class="ti ti-search"></i>
         </div>
-        <div>
-          <div class="ws-mode-name">활동지 검색하기</div>
-          <div class="ws-mode-desc">학번으로 제출한 활동지 내용을 조회합니다</div>
+        <div class="ws-menu-text">
+          <div class="ws-menu-name">조회 · 수정하기</div>
+          <div class="ws-menu-desc">제출한 활동지를 조회하고 수정합니다</div>
         </div>
-        <i class="ti ti-chevron-right" style="margin-left:auto;color:var(--text3);font-size:18px"></i>
-      </div>
+        <i class="ti ti-chevron-right ws-menu-arr"></i>
+      </button>
     </div>
   </div>
 
-  <!-- 작성 / 수정 화면 -->
-  <div id="ws-form-area" class="content" style="display:none">
+  <!-- ② 작성 폼 -->
+  <div id="ws-write" style="display:none" class="content">
     <div class="card">
       <div style="font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:7px">
         <i class="ti ti-users" style="font-size:15px;color:var(--primary)"></i>팀 정보 입력
@@ -368,21 +374,55 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
     <div id="ws-status" class="smsg"></div>
   </div>
 
-  <!-- 검색 화면 -->
-  <div id="ws-search-area" class="content" style="display:none;max-width:600px">
-    <div class="card">
-      <div style="font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:7px">
-        <i class="ti ti-search" style="font-size:15px;color:var(--data)"></i>학번으로 활동지 검색
+  <!-- ③ 조회 화면 -->
+  <div id="ws-view" style="display:none" class="content" style="max-width:620px">
+    <!-- 학번 검색 -->
+    <div class="card" style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:7px">
+        <i class="ti ti-search" style="font-size:15px;color:#00C49A"></i>학번으로 조회
       </div>
       <div style="display:flex;gap:8px">
-        <input class="fi" id="ws-search-id" type="text" placeholder="팀원 1 학번 입력 (예: 1111)" style="flex:1"
+        <input class="fi" id="ws-view-id" type="text" placeholder="팀원 1 학번 입력 (예: 1111)" style="flex:1"
           onkeydown="if(event.key==='Enter')wsSearch()">
-        <button class="abtn p" onclick="wsSearch()" style="flex-shrink:0">
-          <i class="ti ti-search"></i> 검색
+        <button class="abtn p" onclick="wsSearch()" style="flex-shrink:0;background:var(--accent);border-color:var(--accent)">
+          <i class="ti ti-search"></i> 조회
         </button>
       </div>
     </div>
-    <div id="ws-search-result"></div>
+    <!-- 조회 결과 -->
+    <div id="ws-view-result"></div>
+  </div>
+
+  <!-- ④ 수정 폼 (조회 후 수정 모드) -->
+  <div id="ws-edit" style="display:none" class="content">
+    <div class="smsg info" style="display:block;margin-bottom:12px" id="ws-edit-notice">
+      조회한 활동지를 수정합니다. 수정 완료 후 저장 버튼을 눌러주세요.
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:7px">
+        <i class="ti ti-users" style="font-size:15px;color:var(--primary)"></i>팀 정보
+      </div>
+      <div class="mem-block">
+        <div class="mem-hdr"><span class="mtag m1">팀원 1</span></div>
+        <div class="frow">
+          <div class="fg"><label class="fl">이름</label><input class="fi" id="ws-en1" type="text" oninput="updateEditLabels()"></div>
+          <div class="fg"><label class="fl">학번</label><input class="fi" id="ws-eid1" type="text" readonly style="background:var(--bg);cursor:not-allowed"></div>
+        </div>
+      </div>
+      <div class="mem-block">
+        <div class="mem-hdr"><span class="mtag m2">팀원 2</span></div>
+        <div class="frow">
+          <div class="fg"><label class="fl">이름</label><input class="fi" id="ws-en2" type="text" oninput="updateEditLabels()"></div>
+          <div class="fg"><label class="fl">학번</label><input class="fi" id="ws-eid2" type="text"></div>
+        </div>
+      </div>
+    </div>
+    <div class="team-div"><div class="team-div-line"></div><div class="team-div-label"><i class="ti ti-users" style="font-size:11px;vertical-align:-1px;margin-right:3px"></i>2인 공동 활동지</div><div class="team-div-line"></div></div>
+    <div id="ws-edit-questions"></div>
+    <div class="team-div"><div class="team-div-line"></div><div class="team-div-label"><i class="ti ti-writing" style="font-size:11px;vertical-align:-1px;margin-right:3px"></i>개인 소감문</div><div class="team-div-line"></div></div>
+    <div class="mem-block"><div class="mem-hdr"><span class="mtag m1" id="edit-lbl-1">팀원 1 소감문</span></div><textarea class="fta" id="ws-eref1" placeholder="소감문을 작성하세요..."></textarea></div>
+    <div class="mem-block"><div class="mem-hdr"><span class="mtag m2" id="edit-lbl-2">팀원 2 소감문</span></div><textarea class="fta" id="ws-eref2" placeholder="소감문을 작성하세요..."></textarea></div>
+    <div id="ws-edit-status" class="smsg"></div>
   </div>
 </div>
 
@@ -887,7 +927,7 @@ async function go(id) {
   loadSavedIP(); loadSbInputs();
   if (id === 'worksheet') {
     await loadQs();
-    wsBackToMenu();
+    wsShowLanding();
   }
   if (id === 'teacher')    { await renderTeacher(); }
   if (id === 'viewer')     { connectViewer(); }
@@ -1281,152 +1321,199 @@ async function resetQs(){
 }
 
 /* ── 활동지 모드 관리 ── */
-let wsCurrentMode = '';
+let wsEditId = '';  // 수정 중인 submission id
 
-function wsSetMode(mode) {
-  wsCurrentMode = mode;
-  const labels = { write:'활동지 작성하기', edit:'활동지 수정하기', search:'활동지 검색하기' };
-  const sublabels = { write:'팀 정보와 답변을 입력하고 저장하세요', edit:'학번으로 불러온 후 수정하세요', search:'학번으로 제출 내용을 조회합니다' };
-  document.getElementById('ws-mode-label').textContent = sublabels[mode];
-  document.getElementById('ws-mode-select').style.display = 'none';
-  document.getElementById('ws-form-area').style.display = mode==='search' ? 'none' : '';
-  document.getElementById('ws-search-area').style.display = mode==='search' ? '' : 'none';
+function wsGoHome() {
+  go('home');
+}
 
-  // 상단 버튼 구성
-  const actions = document.getElementById('ws-topbar-actions');
-  actions.innerHTML = '';
+async function wsMode(mode) {
+  // 모든 패널 숨기기
+  ['ws-landing','ws-write','ws-view','ws-edit'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  const acts = document.getElementById('ws-tb-actions');
+  acts.innerHTML = '';
 
-  const backBtn = document.createElement('button');
-  backBtn.className = 'abtn';
-  backBtn.innerHTML = '<i class="ti ti-layout-grid"></i> 메뉴';
-  backBtn.onclick = wsBackToMenu;
-  actions.appendChild(backBtn);
+  // 뒤로 버튼 (메뉴로)
+  const menuBtn = document.createElement('button');
+  menuBtn.className = 'abtn';
+  menuBtn.innerHTML = '<i class="ti ti-layout-grid"></i> 메뉴';
+  menuBtn.onclick = wsShowLanding;
+  acts.appendChild(menuBtn);
 
   if (mode === 'write') {
+    document.getElementById('ws-tb-sub').textContent = '새 활동지 작성';
+    document.getElementById('ws-write').style.display = '';
+    // 저장 버튼
     const saveBtn = document.createElement('button');
     saveBtn.className = 'abtn p';
-    saveBtn.innerHTML = '<i class="ti ti-device-floppy"></i> 저장';
+    saveBtn.innerHTML = '<i class="ti ti-device-floppy"></i> 제출';
     saveBtn.onclick = saveWorksheet;
-    actions.appendChild(saveBtn);
+    acts.appendChild(saveBtn);
     // 폼 초기화
+    await loadQs();
     ['ws-n1','ws-id1','ws-n2','ws-id2','ws-ref1','ws-ref2'].forEach(id => {
-      const el = document.getElementById(id); if(el) el.value='';
+      const el = document.getElementById(id); if(el) el.value = '';
     });
     renderWSQs(); updateLabels();
-    document.getElementById('ws-status').style.display='none';
-  }
-  if (mode === 'edit') {
-    const loadBtn = document.createElement('button');
-    loadBtn.className = 'abtn';
-    loadBtn.innerHTML = '<i class="ti ti-download"></i> 불러오기';
-    loadBtn.onclick = loadWorksheetForEdit;
-    actions.appendChild(loadBtn);
+    const st = document.getElementById('ws-status');
+    st.style.display = 'none';
+
+  } else if (mode === 'view') {
+    document.getElementById('ws-tb-sub').textContent = '조회 · 수정';
+    document.getElementById('ws-view').style.display = '';
+    document.getElementById('ws-view-result').innerHTML = '';
+    document.getElementById('ws-view-id').value = '';
+    setTimeout(() => document.getElementById('ws-view-id').focus(), 100);
+
+  } else if (mode === 'edit') {
+    document.getElementById('ws-tb-sub').textContent = '활동지 수정 중';
+    document.getElementById('ws-edit').style.display = '';
+    // 저장 버튼
     const saveBtn = document.createElement('button');
     saveBtn.className = 'abtn p';
     saveBtn.innerHTML = '<i class="ti ti-device-floppy"></i> 수정 저장';
-    saveBtn.onclick = saveWorksheet;
-    actions.appendChild(saveBtn);
-    // id1 칸에 커서
-    renderWSQs(); updateLabels();
-    document.getElementById('ws-status').className='smsg info';
-    document.getElementById('ws-status').textContent='팀원 1 학번을 입력하고 "불러오기"를 눌러주세요.';
-    document.getElementById('ws-status').style.display='block';
+    saveBtn.onclick = saveEditWorksheet;
+    acts.appendChild(saveBtn);
   }
 }
 
-function wsBackToMenu() {
-  wsCurrentMode = '';
-  document.getElementById('ws-mode-select').style.display = '';
-  document.getElementById('ws-form-area').style.display = 'none';
-  document.getElementById('ws-search-area').style.display = 'none';
-  document.getElementById('ws-topbar-actions').innerHTML = '';
-  document.getElementById('ws-mode-label').textContent = '모드 선택';
+function wsShowLanding() {
+  ['ws-landing','ws-write','ws-view','ws-edit'].forEach(id => {
+    document.getElementById(id).style.display = id === 'ws-landing' ? '' : 'none';
+  });
+  document.getElementById('ws-tb-sub').textContent = '작성 또는 조회하기';
+  document.getElementById('ws-tb-actions').innerHTML = '';
 }
 
-async function loadWorksheetForEdit() {
-  const id1 = document.getElementById('ws-id1').value.trim();
-  const st = document.getElementById('ws-status');
-  if(!id1) { st.className='smsg err'; st.textContent='팀원 1 학번을 먼저 입력해 주세요.'; return; }
-  showLoading('활동지 불러오는 중...');
-  try {
-    const {data,error} = await sb.from('submissions').select('*').eq('student_id1',id1).maybeSingle();
-    if(error) throw error;
-    if(!data) { st.className='smsg err'; st.textContent='해당 학번으로 제출된 활동지가 없습니다.'; hideLoading(); return; }
-    document.getElementById('ws-n1').value=data.name1||'';
-    document.getElementById('ws-n2').value=data.name2||'';
-    document.getElementById('ws-id2').value=data.student_id2||'';
-    const ans=data.answers||{};
-    await loadQs(); renderWSQs();
-    questions.forEach((_,i)=>{const el=document.getElementById(`ws-q${i}`);if(el)el.value=ans[i]||'';});
-    document.getElementById('ws-ref1').value=data.reflection1||'';
-    document.getElementById('ws-ref2').value=data.reflection2||'';
-    updateLabels();
-    st.className='smsg ok'; st.textContent='✓ 활동지를 불러왔습니다. 수정 후 "수정 저장"을 눌러주세요.';
-  } catch(e) { st.className='smsg err'; st.textContent='불러오기 실패: '+e.message; }
-  hideLoading();
-}
-
-async function wsSearch() {
-  const id1 = document.getElementById('ws-search-id').value.trim();
-  const result = document.getElementById('ws-search-result');
-  if(!id1) { result.innerHTML='<div class="smsg err" style="display:block">학번을 입력해 주세요.</div>'; return; }
-  showLoading('검색 중...');
-  try {
-    const {data,error} = await sb.from('submissions').select('*').eq('student_id1',id1).maybeSingle();
-    if(error) throw error;
-    if(!data) { result.innerHTML='<div class="smsg err" style="display:block">해당 학번으로 제출된 활동지가 없습니다.</div>'; hideLoading(); return; }
-    const ans = data.answers||{};
-    await loadQs();
-    result.innerHTML = `
-      <div class="card" style="margin-top:12px">
-        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
-          <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#0066FF,#0047CC);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0">${(data.name1||'?').charAt(0)}</div>
-          <div>
-            <div style="font-size:14px;font-weight:700">${data.name1} & ${data.name2}</div>
-            <div style="font-size:12px;color:var(--text3)">${data.student_id1} · ${data.student_id2} · ${new Date(data.submitted_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false})} 제출</div>
-          </div>
-          <button class="abtn" style="margin-left:auto;font-size:11px" onclick="wsLoadIntoEdit('${id1}')">
-            <i class="ti ti-edit"></i> 수정하기
-          </button>
-        </div>
-        <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">공동 활동지</div>
-        ${questions.map((q,i)=>`<div class="ans-block"><div class="ans-q">Q${i+1}. ${q}</div><div class="ans-a">${ans[i]||'<span style="color:var(--text3)">미작성</span>'}</div></div>`).join('')}
-        <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin:14px 0 10px">개인 소감문</div>
-        <div class="mem-block"><div class="mem-hdr"><span class="mtag m1">${data.name1} 소감문</span></div><div style="font-size:13px;line-height:1.65">${data.reflection1||'<span style="color:var(--text3)">미작성</span>'}</div></div>
-        <div class="mem-block"><div class="mem-hdr"><span class="mtag m2">${data.name2} 소감문</span></div><div style="font-size:13px;line-height:1.65">${data.reflection2||'<span style="color:var(--text3)">미작성</span>'}</div></div>
-      </div>`;
-  } catch(e) { result.innerHTML=`<div class="smsg err" style="display:block">검색 실패: ${e.message}</div>`; }
-  hideLoading();
-}
-
-async function wsLoadIntoEdit(id1) {
-  wsSetMode('edit');
-  document.getElementById('ws-id1').value = id1;
-  await loadWorksheetForEdit();
-}
-
-async function saveWorksheet(){
-  const n1=document.getElementById('ws-n1').value.trim(),id1=document.getElementById('ws-id1').value.trim(),n2=document.getElementById('ws-n2').value.trim(),id2=document.getElementById('ws-id2').value.trim();
+/* 작성 저장 */
+async function saveWorksheet() {
+  const n1=document.getElementById('ws-n1').value.trim();
+  const id1=document.getElementById('ws-id1').value.trim();
+  const n2=document.getElementById('ws-n2').value.trim();
+  const id2=document.getElementById('ws-id2').value.trim();
   const st=document.getElementById('ws-status');
   if(!n1||!id1||!n2||!id2){st.className='smsg err';st.textContent='두 팀원의 이름과 학번을 모두 입력해 주세요.';return;}
-  if(!sb){st.className='smsg err';st.textContent='Supabase가 연결되지 않았습니다.';return;}
+  if(!sb){st.className='smsg err';st.textContent='DB가 연결되지 않았습니다.';return;}
   showLoading('저장 중...');
   const answers={};questions.forEach((_,i)=>{const el=document.getElementById(`ws-q${i}`);if(el)answers[i]=el.value.trim();});
-  const row={name1:n1,student_id1:id1,class1:'',name2:n2,student_id2:id2,answers,reflection1:document.getElementById('ws-ref1').value.trim(),reflection2:document.getElementById('ws-ref2').value.trim(),updated_at:new Date().toISOString()};
+  const row={name1:n1,student_id1:id1,class1:'',name2:n2,student_id2:id2,answers,
+    reflection1:document.getElementById('ws-ref1').value.trim(),
+    reflection2:document.getElementById('ws-ref2').value.trim(),
+    updated_at:new Date().toISOString()};
   try{
     const{data:existing}=await sb.from('submissions').select('id').eq('student_id1',id1).maybeSingle();
     let error;
     if(existing){const r=await sb.from('submissions').update(row).eq('id',existing.id);error=r.error;}
     else{row.submitted_at=new Date().toISOString();const r=await sb.from('submissions').insert(row);error=r.error;}
     if(error)throw error;
-    st.className='smsg ok';st.textContent= wsCurrentMode==='edit' ? '✓ 활동지가 수정되었습니다!' : '✓ 활동지가 저장되었습니다!';
+    st.className='smsg ok';st.textContent='✓ 활동지가 제출되었습니다!';
   }catch(e){st.className='smsg err';st.textContent='저장 실패: '+e.message;}
   hideLoading();
 }
 
-async function refreshWorksheet(){
-  // 수정 모드에서 불러오기
-  if(wsCurrentMode==='edit') { await loadWorksheetForEdit(); return; }
+/* 조회 */
+async function wsSearch() {
+  const id1 = document.getElementById('ws-view-id').value.trim();
+  const result = document.getElementById('ws-view-result');
+  if(!id1){result.innerHTML='<div class="smsg err" style="display:block;margin-top:0">학번을 입력해 주세요.</div>';return;}
+  showLoading('조회 중...');
+  try{
+    const{data,error}=await sb.from('submissions').select('*').eq('student_id1',id1).maybeSingle();
+    if(error)throw error;
+    if(!data){result.innerHTML='<div class="smsg err" style="display:block;margin-top:0">해당 학번으로 제출된 활동지가 없습니다.</div>';hideLoading();return;}
+    await loadQs();
+    const ans=data.answers||{};
+    const submittedAt=data.submitted_at?new Date(data.submitted_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}):'';
+    result.innerHTML=`<div class="view-result-card">
+      <div class="view-result-header">
+        <div class="view-avatar">${(data.name1||'?').charAt(0)}</div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700">${data.name1} &amp; ${data.name2}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">학번 ${data.student_id1} · ${data.student_id2} &nbsp;|&nbsp; ${submittedAt} 제출</div>
+        </div>
+        <button class="abtn" style="flex-shrink:0;border-color:var(--accent);color:var(--accent)" onclick="wsGoEdit('${data.student_id1}')">
+          <i class="ti ti-edit"></i> 수정하기
+        </button>
+      </div>
+      <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">공동 활동지</div>
+      ${questions.map((q,i)=>`<div class="ans-block"><div class="ans-q">Q${i+1}. ${q}</div><div class="ans-a">${ans[i]||'<span style="color:var(--text3)">미작성</span>'}</div></div>`).join('')}
+      <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin:14px 0 10px">개인 소감문</div>
+      <div class="mem-block"><div class="mem-hdr"><span class="mtag m1">${data.name1} 소감문</span></div><div style="font-size:13px;line-height:1.65">${data.reflection1||'<span style="color:var(--text3)">미작성</span>'}</div></div>
+      <div class="mem-block"><div class="mem-hdr"><span class="mtag m2">${data.name2} 소감문</span></div><div style="font-size:13px;line-height:1.65">${data.reflection2||'<span style="color:var(--text3)">미작성</span>'}</div></div>
+    </div>`;
+  }catch(e){result.innerHTML=`<div class="smsg err" style="display:block;margin-top:0">조회 실패: ${e.message}</div>`;}
+  hideLoading();
+}
+
+/* 조회 → 수정 모드 전환 */
+async function wsGoEdit(id1) {
+  showLoading('불러오는 중...');
+  try{
+    const{data,error}=await sb.from('submissions').select('*').eq('student_id1',id1).maybeSingle();
+    if(error)throw error;
+    if(!data){hideLoading();return;}
+    wsEditId = data.id;
+    await loadQs();
+    // 수정 폼에 데이터 채우기
+    document.getElementById('ws-en1').value=data.name1||'';
+    document.getElementById('ws-eid1').value=data.student_id1||'';
+    document.getElementById('ws-en2').value=data.name2||'';
+    document.getElementById('ws-eid2').value=data.student_id2||'';
+    // 수정용 질문 렌더링
+    const editQArea=document.getElementById('ws-edit-questions');
+    const ans=data.answers||{};
+    editQArea.innerHTML=questions.map((q,i)=>`<div class="card"><div class="qt"><span class="qn">${i+1}</span><span>${q}</span></div><textarea class="fta" id="ws-eq${i}" placeholder="여기에 답변을 작성하세요...">${ans[i]||''}</textarea></div>`).join('');
+    document.getElementById('ws-eref1').value=data.reflection1||'';
+    document.getElementById('ws-eref2').value=data.reflection2||'';
+    updateEditLabels();
+    document.getElementById('ws-edit-status').style.display='none';
+    wsMode('edit');
+  }catch(e){alert('불러오기 실패: '+e.message);}
+  hideLoading();
+}
+
+/* 수정 저장 */
+async function saveEditWorksheet() {
+  const n1=document.getElementById('ws-en1').value.trim();
+  const id1=document.getElementById('ws-eid1').value.trim();
+  const n2=document.getElementById('ws-en2').value.trim();
+  const id2=document.getElementById('ws-eid2').value.trim();
+  const st=document.getElementById('ws-edit-status');
+  if(!n1||!n2){st.className='smsg err';st.textContent='이름을 입력해 주세요.';return;}
+  if(!sb){st.className='smsg err';st.textContent='DB가 연결되지 않았습니다.';return;}
+  showLoading('수정 저장 중...');
+  const answers={};questions.forEach((_,i)=>{const el=document.getElementById(`ws-eq${i}`);if(el)answers[i]=el.value.trim();});
+  const row={name1:n1,student_id1:id1,class1:'',name2:n2,student_id2:id2,answers,
+    reflection1:document.getElementById('ws-eref1').value.trim(),
+    reflection2:document.getElementById('ws-eref2').value.trim(),
+    updated_at:new Date().toISOString()};
+  try{
+    const{error}=await sb.from('submissions').update(row).eq('id',wsEditId);
+    if(error)throw error;
+    st.className='smsg ok';st.textContent='✓ 활동지가 수정되었습니다!';
+  }catch(e){st.className='smsg err';st.textContent='수정 실패: '+e.message;}
+  hideLoading();
+}
+
+function updateEditLabels() {
+  const n1=document.getElementById('ws-en1').value.trim();
+  const n2=document.getElementById('ws-en2').value.trim();
+  const l1=document.getElementById('edit-lbl-1');
+  const l2=document.getElementById('edit-lbl-2');
+  if(l1)l1.textContent=(n1||'팀원 1')+' 소감문';
+  if(l2)l2.textContent=(n2||'팀원 2')+' 소감문';
+}
+
+async function refreshWorksheet() {
+  // 수정 모드면 다시 불러오기
+  const editVisible = document.getElementById('ws-edit').style.display !== 'none';
+  if(editVisible && wsEditId) {
+    const id1 = document.getElementById('ws-eid1').value.trim();
+    if(id1) await wsGoEdit(id1);
+  }
+}
 }
 async function refreshTeacher(){showLoading('새로고침 중...');await renderTeacher();hideLoading();}
 async function saveTeacher(){
