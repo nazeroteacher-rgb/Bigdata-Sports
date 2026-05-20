@@ -1309,7 +1309,7 @@ function renderOverview() {
       + '<td><span class="s-ok"><i class="ti ti-check" style="font-size:10px"></i> 제출</span></td>'
       + '<td style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">'
       + badge1 + badge2
-      + '<button class="vbtn" onclick="viewTeam('' + s.id1 + '')">보기</button></td>';
+      + '<button class="vbtn" onclick="viewTeam(\'' + s.id1 + '\')">보기</button></td>';
     body.appendChild(tr);
   });
 }
@@ -1322,7 +1322,6 @@ function renderTeamSel() {
     o.textContent = (s.id1||'?')+'_'+(s.n1||'?')+' & '+(s.id2||'?')+'_'+(s.n2||'?');
     sel.appendChild(o);
   });
-} & ${s.n2||'?'} (${s.c1||'?'}반)`; sel.appendChild(o); });
 }
 function viewTeam(id1) { switchTab(document.querySelectorAll('.t-tab')[2],'tab-detail'); document.getElementById('team-sel').value=id1; showTeamDetail(); }
 function showTeamDetail() {
@@ -1363,7 +1362,7 @@ function renderSkList() {
       + '<span style="font-weight:400;color:var(--text3);font-size:11px">'+(sid||'')+'</span></div>'
       + '<div style="display:flex;align-items:center;gap:7px">'
       + '<span id="sk-st-'+s.id1+'-'+m+'" style="font-size:11px;color:var(--text3)"></span>'
-      + '<button class="gen-btn" onclick="genSeteuk(''+s.id1+'','+m+',this)">'
+      + '<button class="gen-btn" onclick="genSeteuk(\'' + s.id1 + '\',' + m + ',this)">'
       + '<i class="ti ti-sparkles"></i> 세특 생성</button></div></div>'
       + '<div style="font-size:11px;font-weight:600;color:var(--accent);margin:8px 0 4px">'
       + '<i class="ti ti-eye" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>교사 관찰 내용</div>'
@@ -1386,31 +1385,28 @@ async function genSeteuk(tid,m,btn){
   const obsEl=document.getElementById('obs-'+tid+'-'+m);
   const obs=obsEl?obsEl.value.trim():'없음';
   const savedPrompt=localStorage.getItem('seteuk-prompt')||'위 내용을 바탕으로 이 학생의 학교생활기록부 세부능력 및 특기사항을 500자 이내로 작성해 주세요. 학생 개인의 활동, 역량, 성장에 초점을 맞추어 전문적인 어조로 작성하세요. 제목 없이 본문만 작성하세요.';
-  const qaLines=questions.map((q,i)=>'Q'+(i+1)+' ('+q+'): '+(ans[i]||'미작성')).join('
-');
+  const qaLines=questions.map((q,i)=>'Q'+(i+1)+' ('+q+'): '+(ans[i]||'미작성')).join('\n');
   const sid=m===1?s.id1:s.id2, partner=m===1?s.n2:s.n1;
-  const prompt='다음은 스포츠 생활·빅데이터 분석 융합 수업(맞춤형 맨몸 운동 분석 인공지능 만들기, 하루 5차시)에서 2인 1조 팀이 제출한 활동지와 개인 소감문입니다.
-
-'
-    +'학생 이름: '+name+'
-학번: '+sid+'
-팀원: '+partner+'
-
-'
-    +'[공동 활동지]
-'+qaLines+'
-
-'
-    +'[개인 소감문]
-'+(ref||'미작성')+'
-
-'
-    +'[교사 관찰 내용]
-'+obs+'
-
-'
-    +savedPrompt;
-  try{
+  const promptParts=[
+    '다음은 스포츠 생활·빅데이터 분석 융합 수업(맞춤형 맨몸 운동 분석 인공지능 만들기, 하루 5차시)에서 2인 1조 팀이 제출한 활동지와 개인 소감문입니다.',
+    '',
+    '학생 이름: '+name,
+    '학번: '+sid,
+    '팀원: '+partner,
+    '',
+    '[공동 활동지]',
+    qaLines,
+    '',
+    '[개인 소감문]',
+    (ref||'미작성'),
+    '',
+    '[교사 관찰 내용]',
+    obs,
+    '',
+    savedPrompt
+  ];
+  const prompt=promptParts.join('\n');
+    try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -1722,7 +1718,6 @@ function dlSeteukExcel() {
   XLSX.utils.book_append_sheet(wb,ws2,'세특');
   const fname='세특_'+new Date().toLocaleDateString('ko-KR').split('.').join('-').replace(/\s/g,'')+'.xlsx';
   XLSX.writeFile(wb,fname);
-}.xlsx`);
 }
   const hdr=['팀원1','학번1','팀원2','학번2','반',...questions.map((q,i)=>`Q${i+1}`),'팀원1 소감문','팀원2 소감문','팀원1 세특','팀원2 세특'];
   const rows=submissions.map(s=>{const ans=s.answers||{};return[s.n1,s.id1,s.n2,s.id2,s.c1,...questions.map((_,i)=>ans[i]||''),s.ref1||'',s.ref2||'',s.seteuk1||'',s.seteuk2||''];});
