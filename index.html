@@ -300,144 +300,16 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
   <div class="topbar">
     <button class="back-btn" onclick="go('home')"><i class="ti ti-arrow-left"></i> 홈</button>
     <div><div class="tb-title">수업 자료 다운로드</div></div>
-    <div class="tb-actions"><button class="abtn" onclick="showLoading('새로고침 중...');setTimeout(hideLoading,800)"><i class="ti ti-refresh"></i> 새로고침</button></div>
+    <div class="tb-actions">
+      <button class="abtn" onclick="loadMaterials()"><i class="ti ti-refresh"></i> 새로고침</button>
+    </div>
   </div>
   <div class="content">
-    <div class="sec-label">1차시</div>
-    <div class="mat-item"><div class="mat-icon"><i class="ti ti-presentation"></i></div><div style="flex:1;min-width:0"><div class="mat-name">운동 자세 분석 및 인공지능 개요.pdf</div><div class="mat-meta">관절 각도 · AI 분류 모델 원리</div></div><button class="dl-btn" onclick="fakeDownload(this)"><i class="ti ti-download"></i> 다운</button></div>
-    <div class="sec-label">2차시</div>
-    <div class="mat-item"><div class="mat-icon"><i class="ti ti-cpu"></i></div><div style="flex:1;min-width:0"><div class="mat-name">티처블머신 활용 가이드.pdf</div><div class="mat-meta">데이터 수집 · 모델 학습 · 테스트</div></div><button class="dl-btn" onclick="fakeDownload(this)"><i class="ti ti-download"></i> 다운</button></div>
-    <div class="sec-label">3차시</div>
-    <div class="mat-item"><div class="mat-icon"><i class="ti ti-device-watch"></i></div><div style="flex:1;min-width:0"><div class="mat-name">헥사보드 조립 매뉴얼.pdf</div><div class="mat-meta">스마트워치 형태 · 가속도/자이로 센서</div></div><button class="dl-btn" onclick="fakeDownload(this)"><i class="ti ti-download"></i> 다운</button></div>
-    <div class="sec-label">4–5차시</div>
-    <div class="mat-item"><div class="mat-icon"><i class="ti ti-activity"></i></div><div style="flex:1;min-width:0"><div class="mat-name">활동지 작성 안내 및 발표 양식.pdf</div><div class="mat-meta">AI 모델 결과 · 발표 자료 양식</div></div><button class="dl-btn" onclick="fakeDownload(this)"><i class="ti ti-download"></i> 다운</button></div>
+    <div id="mat-list">
+      <div class="empty-st"><div class="empty-icon">📂</div><p>자료를 불러오는 중...</p></div>
+    </div>
   </div>
 </div>
-
-<!-- WORKSHEET -->
-<div id="worksheet" class="screen">
-  <div class="topbar">
-    <button class="back-btn" onclick="go('home')"><i class="ti ti-arrow-left"></i> 홈</button>
-    <div><div class="tb-title">수업 활동지</div></div>
-  </div>
-
-  <!-- 탭 선택 바 -->
-  <div class="ws-tab-bar">
-    <button class="ws-tab active" id="ws-tab-write" onclick="wsShowTab('write',this)">
-      <i class="ti ti-pencil-plus"></i> 활동지 작성
-    </button>
-    <button class="ws-tab" id="ws-tab-view" onclick="wsShowTab('view',this)">
-      <i class="ti ti-search"></i> 활동지 조회
-    </button>
-  </div>
-
-  <!-- ① 작성 탭 -->
-  <div id="ws-panel-write" class="content">
-    <div class="card" style="margin-bottom:12px">
-      <div style="font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:7px">
-        <i class="ti ti-users" style="font-size:15px;color:var(--primary)"></i>팀 정보 입력
-      </div>
-      <div class="mem-block">
-        <div class="mem-hdr"><span class="mtag m1">팀원 1</span><span style="font-size:11px;color:var(--text3)">(대표 입력자)</span></div>
-        <div class="frow">
-          <div class="fg"><label class="fl">이름</label><input class="fi" id="ws-n1" type="text" placeholder="홍길동" oninput="updateLabels()"></div>
-          <div class="fg"><label class="fl">학번</label><input class="fi" id="ws-id1" type="text" placeholder="1111"></div>
-        </div>
-      </div>
-      <div class="mem-block">
-        <div class="mem-hdr"><span class="mtag m2">팀원 2</span></div>
-        <div class="frow">
-          <div class="fg"><label class="fl">이름</label><input class="fi" id="ws-n2" type="text" placeholder="김철수" oninput="updateLabels()"></div>
-          <div class="fg"><label class="fl">학번</label><input class="fi" id="ws-id2" type="text" placeholder="1112"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="team-div"><div class="team-div-line"></div><div class="team-div-label"><i class="ti ti-users" style="font-size:11px;vertical-align:-1px;margin-right:3px"></i>2인 공동 활동지</div><div class="team-div-line"></div></div>
-    <div id="ws-questions"></div>
-
-    <div class="team-div"><div class="team-div-line"></div><div class="team-div-label"><i class="ti ti-writing" style="font-size:11px;vertical-align:-1px;margin-right:3px"></i>개인 소감문 (각자 작성)</div><div class="team-div-line"></div></div>
-    <div class="mem-block"><div class="mem-hdr"><span class="mtag m1" id="ref-lbl-1">팀원 1 소감문</span></div><textarea class="fta" id="ws-ref1" placeholder="수업을 통해 느낀 점, 배운 점, 더 알고 싶은 점을 자유롭게 작성하세요..."></textarea></div>
-    <div class="mem-block"><div class="mem-hdr"><span class="mtag m2" id="ref-lbl-2">팀원 2 소감문</span></div><textarea class="fta" id="ws-ref2" placeholder="수업을 통해 느낀 점, 배운 점, 더 알고 싶은 점을 자유롭게 작성하세요..."></textarea></div>
-
-    <div style="display:flex;justify-content:flex-end;margin-top:8px">
-      <button class="abtn p" onclick="saveWorksheet()" style="padding:9px 24px;font-size:13px">
-        <i class="ti ti-device-floppy"></i> 제출하기
-      </button>
-    </div>
-    <div id="ws-status" class="smsg"></div>
-  </div>
-
-  <!-- ② 조회 탭 -->
-  <div id="ws-panel-view" class="content" style="display:none;max-width:680px">
-    <!-- 검색 박스 -->
-    <div class="card" style="margin-bottom:14px">
-      <div style="font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:7px">
-        <i class="ti ti-search" style="font-size:15px;color:var(--accent)"></i>활동지 검색
-      </div>
-      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">팀원 1의 이름 또는 학번으로 검색하세요</div>
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <input class="fi" id="ws-search-name" type="text" placeholder="이름 (예: 홍길동)" style="flex:1">
-        <input class="fi" id="ws-search-id" type="text" placeholder="학번 (예: 1111)" style="flex:1"
-          onkeydown="if(event.key==='Enter')wsSearch()">
-        <button class="abtn" onclick="wsSearch()" style="flex-shrink:0;border-color:var(--accent);color:var(--accent);font-weight:600">
-          <i class="ti ti-search"></i> 검색
-        </button>
-      </div>
-    </div>
-
-    <!-- 검색 결과 -->
-    <div id="ws-search-result"></div>
-  </div>
-
-  <!-- ③ 수정 패널 (조회 결과에서 수정하기 클릭 시) -->
-  <div id="ws-panel-edit" class="content" style="display:none">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-      <button class="abtn" onclick="wsBackToView()" style="font-size:11px">
-        <i class="ti ti-arrow-left"></i> 조회로 돌아가기
-      </button>
-      <span style="font-size:13px;font-weight:700;color:var(--text)">활동지 수정</span>
-    </div>
-    <div class="smsg info" id="ws-edit-notice" style="display:block;margin-bottom:12px">
-      <i class="ti ti-info-circle" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>
-      수정 후 아래 <strong>수정 저장</strong> 버튼을 눌러야 반영됩니다.
-    </div>
-    <div class="card" style="margin-bottom:12px">
-      <div style="font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:7px">
-        <i class="ti ti-users" style="font-size:15px;color:var(--primary)"></i>팀 정보
-      </div>
-      <div class="mem-block">
-        <div class="mem-hdr"><span class="mtag m1">팀원 1</span></div>
-        <div class="frow">
-          <div class="fg"><label class="fl">이름</label><input class="fi" id="ws-en1" type="text" oninput="updateEditLabels()"></div>
-          <div class="fg"><label class="fl">학번 (변경 불가)</label><input class="fi" id="ws-eid1" type="text" readonly style="background:var(--bg);color:var(--text3);cursor:not-allowed"></div>
-        </div>
-      </div>
-      <div class="mem-block">
-        <div class="mem-hdr"><span class="mtag m2">팀원 2</span></div>
-        <div class="frow">
-          <div class="fg"><label class="fl">이름</label><input class="fi" id="ws-en2" type="text" oninput="updateEditLabels()"></div>
-          <div class="fg"><label class="fl">학번</label><input class="fi" id="ws-eid2" type="text"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="team-div"><div class="team-div-line"></div><div class="team-div-label"><i class="ti ti-users" style="font-size:11px;vertical-align:-1px;margin-right:3px"></i>2인 공동 활동지</div><div class="team-div-line"></div></div>
-    <div id="ws-edit-questions"></div>
-
-    <div class="team-div"><div class="team-div-line"></div><div class="team-div-label"><i class="ti ti-writing" style="font-size:11px;vertical-align:-1px;margin-right:3px"></i>개인 소감문</div><div class="team-div-line"></div></div>
-    <div class="mem-block"><div class="mem-hdr"><span class="mtag m1" id="edit-lbl-1">팀원 1 소감문</span></div><textarea class="fta" id="ws-eref1" placeholder="소감문을 작성하세요..."></textarea></div>
-    <div class="mem-block"><div class="mem-hdr"><span class="mtag m2" id="edit-lbl-2">팀원 2 소감문</span></div><textarea class="fta" id="ws-eref2" placeholder="소감문을 작성하세요..."></textarea></div>
-
-    <div style="display:flex;justify-content:flex-end;margin-top:8px">
-      <button class="abtn p" onclick="saveEditWorksheet()" style="padding:9px 24px;font-size:13px">
-        <i class="ti ti-device-floppy"></i> 수정 저장
-      </button>
-    </div>
-    <div id="ws-edit-status" class="smsg"></div>
-  </div>
-</div>
-
 <!-- STUDENT VIEWER -->
 <div id="viewer" class="screen">
   <div class="topbar">
@@ -526,6 +398,40 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
     <button class="t-tab" onclick="switchTab(this,'tab-seteuk')">세특 자동 완성</button>
     <button class="t-tab" onclick="switchTab(this,'tab-qmgmt')">질문 관리</button>
     <button class="t-tab" onclick="switchTab(this,'tab-install')"><i class="ti ti-download" style="font-size:13px;vertical-align:-2px"></i> 설치 안내</button>
+    <button class="t-tab" onclick="switchTab(this,'tab-materials-mgr')"><i class="ti ti-folder-up" style="font-size:13px;vertical-align:-2px"></i> 수업 자료 관리</button>
+  </div>
+
+  <!-- 자료 관리 탭 -->
+  <div id="tab-materials-mgr" class="t-content hidden">
+    <div class="card" style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:7px">
+        <i class="ti ti-folder-up" style="font-size:15px;color:var(--primary)"></i>수업 자료 업로드
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px">업로드한 자료는 학생 수업 자료 다운로드 탭에 바로 표시됩니다.</div>
+      <div class="fg" style="margin-bottom:10px">
+        <label class="fl">자료 이름</label>
+        <input class="fi" id="mat-name-input" type="text" placeholder="예: 티처블머신 활용 가이드">
+      </div>
+      <div class="fg" style="margin-bottom:12px">
+        <label class="fl">파일 선택</label>
+        <input type="file" id="mat-file-input" style="padding:7px 0;font-size:13px;color:var(--text)">
+      </div>
+      <button class="abtn p" onclick="uploadMaterial()" style="width:100%;justify-content:center;padding:9px">
+        <i class="ti ti-upload"></i> 업로드
+      </button>
+      <div id="mat-upload-msg" class="smsg" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:7px">
+        <i class="ti ti-files" style="font-size:15px;color:var(--accent)"></i>업로드된 자료 목록
+        <button class="abtn" onclick="loadMaterialsMgr()" style="margin-left:auto;font-size:11px;padding:4px 10px">
+          <i class="ti ti-refresh"></i> 새로고침
+        </button>
+      </div>
+      <div id="mat-mgr-list">
+        <div class="empty-st" style="padding:24px"><div class="empty-icon">📂</div><p>업로드된 자료가 없습니다</p></div>
+      </div>
+    </div>
   </div>
 
   <!-- 화면 방송 -->
@@ -983,6 +889,7 @@ async function go(id) {
     document.querySelectorAll('.ws-tab').forEach((b,i) => b.classList.toggle('active', i===0));
   }
   if (id === 'teacher')    { await renderTeacher(); }
+  if (id === 'materials')   { loadMaterials(); }
   if (id === 'viewer')     { connectViewer(); }
 }
 function teacherLogin() {
@@ -1001,6 +908,7 @@ function switchTab(btn, id) {
     const inp = document.getElementById('seteuk-prompt-input');
     if (inp) inp.value = localStorage.getItem('seteuk-prompt') || '';
   }
+  if (id === 'tab-materials-mgr') loadMaterialsMgr();
 }
 function selAI(ai, btn) {
   selectedAI = ai;
@@ -1309,7 +1217,8 @@ function renderOverview() {
       + '<td><span class="s-ok"><i class="ti ti-check" style="font-size:10px"></i> 제출</span></td>'
       + '<td style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">'
       + badge1 + badge2
-      + '<button class="vbtn" onclick="viewTeam(\'' + s.id1 + '\')">보기</button></td>';
+      + '<button class="vbtn" onclick="viewTeam(\'' + s.id1 + '\')">보기</button>'
+      + '<button class="vbtn" style="color:var(--sport);border-color:var(--sport)" onclick="deleteSubmission(\'' + s.id1 + '\',\'' + (s.n1||'') + '\',\'' + (s.n2||'') + '\')">삭제</button></td>';
     body.appendChild(tr);
   });
 }
@@ -1325,13 +1234,69 @@ function renderTeamSel() {
 }
 function viewTeam(id1) { switchTab(document.querySelectorAll('.t-tab')[2],'tab-detail'); document.getElementById('team-sel').value=id1; showTeamDetail(); }
 function showTeamDetail() {
-  const id1=document.getElementById('team-sel').value, area=document.getElementById('team-detail');
+  const id1 = document.getElementById('team-sel').value;
+  const area = document.getElementById('team-detail');
   if (!id1) { area.innerHTML='<div class="empty-st">팀을 선택하면 활동지 내용이 표시됩니다</div>'; return; }
-  const s=submissions.find(x=>x.id1===id1);
+  const s = submissions.find(x => x.id1 === id1);
   if (!s) { area.innerHTML='<div class="empty-st">데이터를 찾을 수 없습니다</div>'; return; }
-  const ans=s.answers||{};
-  area.innerHTML=`<div class="card"><div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:7px"><span class="mtag m1" style="font-size:11px">팀원1</span><span style="font-size:13px;font-weight:700">${s.n1}</span><span style="font-size:11px;color:var(--text2)">${s.id1} · ${s.c1}반</span></div><div style="display:flex;align-items:center;gap:7px"><span class="mtag m2" style="font-size:11px">팀원2</span><span style="font-size:13px;font-weight:700">${s.n2}</span><span style="font-size:11px;color:var(--text2)">${s.id2}</span></div></div><div style="font-size:10px;font-weight:500;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">공동 활동지</div>${questions.map((q,i)=>`<div class="ans-block"><div class="ans-q">Q${i+1}. ${q}</div><div class="ans-a">${ans[i]||'<span style="color:var(--text2)">미작성</span>'}</div></div>`).join('')}<div style="font-size:10px;font-weight:500;color:var(--text2);margin:12px 0 8px;text-transform:uppercase;letter-spacing:.06em">개인 소감문</div><div class="mem-block"><div class="mem-hdr"><span class="mtag m1">${s.n1} 소감문</span></div><div style="font-size:13px;line-height:1.65">${s.ref1||'<span style="color:var(--text2)">미작성</span>'}</div></div><div class="mem-block"><div class="mem-hdr"><span class="mtag m2">${s.n2} 소감문</span></div><div style="font-size:13px;line-height:1.65">${s.ref2||'<span style="color:var(--text2)">미작성</span>'}</div></div></div>`;
+  const ans = s.answers || {};
+
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  // 헤더 (팀 정보 + 삭제 버튼)
+  const header = document.createElement('div');
+  header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px';
+  header.innerHTML = '<div style="display:flex;gap:12px;flex-wrap:wrap">'
+    + '<div style="display:flex;align-items:center;gap:7px"><span class="mtag m1" style="font-size:11px">팀원1</span>'
+    + '<span style="font-size:13px;font-weight:700">' + (s.n1||'') + '</span>'
+    + '<span style="font-size:11px;color:var(--text3)">' + (s.id1||'') + '</span></div>'
+    + '<div style="display:flex;align-items:center;gap:7px"><span class="mtag m2" style="font-size:11px">팀원2</span>'
+    + '<span style="font-size:13px;font-weight:700">' + (s.n2||'') + '</span>'
+    + '<span style="font-size:11px;color:var(--text3)">' + (s.id2||'') + '</span></div>'
+    + '</div>';
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'abtn';
+  delBtn.style.cssText = 'color:var(--sport);border-color:var(--sport);font-size:12px;flex-shrink:0';
+  delBtn.innerHTML = '<i class="ti ti-trash"></i> 활동지 삭제';
+  delBtn.addEventListener('click', () => deleteSubmission(s.id1, s.n1, s.n2));
+  header.appendChild(delBtn);
+  card.appendChild(header);
+
+  // 공동 활동지
+  const qLabel = document.createElement('div');
+  qLabel.style.cssText = 'font-size:10px;font-weight:700;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em';
+  qLabel.textContent = '공동 활동지';
+  card.appendChild(qLabel);
+
+  questions.forEach((q, i) => {
+    const block = document.createElement('div');
+    block.className = 'ans-block';
+    block.innerHTML = '<div class="ans-q">Q' + (i+1) + '. ' + q + '</div>'
+      + '<div class="ans-a">' + (ans[i] || '<span style="color:var(--text3)">미작성</span>') + '</div>';
+    card.appendChild(block);
+  });
+
+  // 소감문
+  const rLabel = document.createElement('div');
+  rLabel.style.cssText = 'font-size:10px;font-weight:700;color:var(--text3);margin:12px 0 8px;text-transform:uppercase;letter-spacing:.06em';
+  rLabel.textContent = '개인 소감문';
+  card.appendChild(rLabel);
+
+  [['m1', s.n1, s.ref1], ['m2', s.n2, s.ref2]].forEach(([tag, name, ref]) => {
+    const mb = document.createElement('div');
+    mb.className = 'mem-block';
+    mb.innerHTML = '<div class="mem-hdr"><span class="mtag ' + tag + '">' + (name||'') + ' 소감문</span></div>'
+      + '<div style="font-size:13px;line-height:1.65">' + (ref || '<span style="color:var(--text3)">미작성</span>') + '</div>';
+    card.appendChild(mb);
+  });
+
+  area.innerHTML = '';
+  area.appendChild(card);
 }
+
+
 function renderRfList(f) {
   f = f||rfFilter;
   const list=document.getElementById('rf-list'), empty=document.getElementById('rf-empty');
@@ -1832,6 +1797,131 @@ function loadSavedIP() {
   const inp2 = document.getElementById('viewer-ip-input');
   if (inp1) inp1.value = ip;
   if (inp2) inp2.value = ip;
+}
+
+/* ── 수업 자료 관련 ── */
+async function loadMaterials() {
+  const list = document.getElementById('mat-list');
+  if (!list) return;
+  if (!sb) {
+    list.innerHTML = '<div class="smsg err" style="display:block">DB가 연결되지 않았습니다.</div>';
+    return;
+  }
+  list.innerHTML = '<div class="empty-st"><div class="empty-icon">⏳</div><p>불러오는 중...</p></div>';
+  try {
+    const { data, error } = await sb.from('materials').select('*').order('uploaded_at', { ascending: false });
+    if (error) throw error;
+    if (!data || !data.length) {
+      list.innerHTML = '<div class="empty-st"><div class="empty-icon">📂</div><p>등록된 수업 자료가 없습니다.</p></div>';
+      return;
+    }
+    list.innerHTML = data.map(m => {
+      const ext = m.name.split('.').pop().toLowerCase();
+      const iconMap = { pdf:'ti-file-type-pdf', ppt:'ti-presentation', pptx:'ti-presentation', hwp:'ti-file-text', docx:'ti-file-text', xlsx:'ti-file-spreadsheet', zip:'ti-file-zip' };
+      const icon = iconMap[ext] || 'ti-file';
+      const colorMap = { pdf:'#CC2233', ppt:'#C9511F', pptx:'#C9511F', hwp:'#0066FF', docx:'#0066FF', xlsx:'#16A34A', zip:'#854F0B' };
+      const color = colorMap[ext] || '#5C5C7A';
+      const size = m.file_size ? (m.file_size > 1024*1024 ? (m.file_size/1024/1024).toFixed(1)+'MB' : Math.round(m.file_size/1024)+'KB') : '';
+      const date = m.uploaded_at ? new Date(m.uploaded_at).toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit'}) : '';
+      return '<div class="mat-item">'
+        + '<div class="mat-icon" style="background:'+color+'22;color:'+color+'"><i class="ti '+icon+'"></i></div>'
+        + '<div style="flex:1;min-width:0"><div class="mat-name">'+m.name+'</div>'
+        + '<div class="mat-meta">'+(size?size+' · ':'')+date+'</div></div>'
+        + '<a href="'+m.file_url+'" target="_blank" download class="dl-btn">'
+        + '<i class="ti ti-download"></i> 다운</a></div>';
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div class="smsg err" style="display:block">불러오기 실패: ' + e.message + '</div>';
+  }
+}
+
+async function loadMaterialsMgr() {
+  const list = document.getElementById('mat-mgr-list');
+  if (!list || !sb) return;
+  list.innerHTML = '<div class="empty-st" style="padding:16px"><p>불러오는 중...</p></div>';
+  try {
+    const { data, error } = await sb.from('materials').select('*').order('uploaded_at', { ascending: false });
+    if (error) throw error;
+    if (!data || !data.length) {
+      list.innerHTML = '<div class="empty-st" style="padding:16px"><div class="empty-icon">📂</div><p>업로드된 자료가 없습니다</p></div>';
+      return;
+    }
+    list.innerHTML = '';
+    data.forEach(m => {
+      const size = m.file_size ? (m.file_size > 1024*1024 ? (m.file_size/1024/1024).toFixed(1)+'MB' : Math.round(m.file_size/1024)+'KB') : '';
+      const date = m.uploaded_at ? new Date(m.uploaded_at).toLocaleDateString('ko-KR') : '';
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)';
+      row.innerHTML = '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:13px;font-weight:500;color:var(--text)">' + m.name + '</div>'
+        + '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + (size ? size+' · ' : '') + date + '</div>'
+        + '</div>'
+        + '<a href="' + m.file_url + '" target="_blank" class="abtn" style="font-size:11px;flex-shrink:0"><i class="ti ti-eye"></i> 보기</a>';
+      const delBtn = document.createElement('button');
+      delBtn.className = 'abtn';
+      delBtn.style.cssText = 'font-size:11px;color:var(--sport);border-color:var(--sport);flex-shrink:0';
+      delBtn.innerHTML = '<i class="ti ti-trash"></i> 삭제';
+      delBtn.addEventListener('click', () => deleteMaterial(m.id, m.name));
+      row.appendChild(delBtn);
+      list.appendChild(row);
+    });
+  } catch(e) {
+    list.innerHTML = '<div class="smsg err" style="display:block">오류: ' + e.message + '</div>';
+  }
+}
+
+
+async function uploadMaterial() {
+  const nameEl = document.getElementById('mat-name-input');
+  const fileEl = document.getElementById('mat-file-input');
+  const msg = document.getElementById('mat-upload-msg');
+  const name = nameEl.value.trim();
+  const file = fileEl.files[0];
+  if (!name) { msg.className='smsg err'; msg.textContent='자료 이름을 입력해 주세요.'; return; }
+  if (!file) { msg.className='smsg err'; msg.textContent='파일을 선택해 주세요.'; return; }
+  if (!sb) { msg.className='smsg err'; msg.textContent='DB가 연결되지 않았습니다.'; return; }
+  msg.className='smsg info'; msg.textContent='업로드 중...';
+  try {
+    const fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const { data: upData, error: upErr } = await sb.storage.from('materials').upload(fileName, file);
+    if (upErr) throw upErr;
+    const { data: urlData } = sb.storage.from('materials').getPublicUrl(fileName);
+    const { error: dbErr } = await sb.from('materials').insert({
+      name: name,
+      file_url: urlData.publicUrl,
+      file_size: file.size
+    });
+    if (dbErr) throw dbErr;
+    msg.className='smsg ok'; msg.textContent='✓ 업로드 완료!';
+    nameEl.value=''; fileEl.value='';
+    loadMaterialsMgr();
+  } catch(e) {
+    msg.className='smsg err'; msg.textContent='업로드 실패: ' + e.message;
+  }
+}
+
+async function deleteMaterial(id, name) {
+  if (!confirm('[' + name + '] 자료를 삭제할까요?')) return;
+  if (!sb) return;
+  try {
+    const { error } = await sb.from('materials').delete().eq('id', id);
+    if (error) throw error;
+    loadMaterialsMgr();
+    loadMaterials();
+  } catch(e) { alert('삭제 실패: ' + e.message); }
+}
+
+/* ── 활동지 삭제 ── */
+async function deleteSubmission(id1, n1, n2) {
+  if (!confirm('[' + (n1||id1) + ' & ' + (n2||'') + '] 팀의 활동지를 삭제할까요?\n이 작업은 되돌릴 수 없습니다.')) return;
+  if (!sb) { alert('DB가 연결되지 않았습니다.'); return; }
+  try {
+    const s = submissions.find(x => x.id1 === id1);
+    if (!s || !s._id) { alert('데이터를 찾을 수 없습니다.'); return; }
+    const { error } = await sb.from('submissions').delete().eq('id', s._id);
+    if (error) throw error;
+    await renderTeacher();
+  } catch(e) { alert('삭제 실패: ' + e.message); }
 }
 
 </script>
