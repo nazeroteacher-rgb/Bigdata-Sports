@@ -1405,15 +1405,30 @@ async function wsSearch() {
   if (!sb) { result.innerHTML = '<div class="smsg err" style="display:block">DB가 연결되지 않았습니다.</div>'; return; }
   showLoading('검색 중...');
   try {
-    let query = sb.from('submissions').select('*');
-    if (id1)   query = query.eq('student_id1', id1);
-    else if (name) query = query.ilike('name1', `%${name}%`);
-    const { data, error } = await query.maybeSingle();
-    if (error) throw error;
+    let data = null;
+    // 학번이 있으면 학번 우선 검색 (팀원1, 팀원2 모두)
+    if (id1) {
+      const r1 = await sb.from('submissions').select('*').eq('student_id1', id1).maybeSingle();
+      if (r1.data) { data = r1.data; }
+      if (!data) {
+        const r2 = await sb.from('submissions').select('*').eq('student_id2', id1).maybeSingle();
+        if (r2.data) data = r2.data;
+      }
+    }
+    // 학번으로 못 찾았거나 학번 없이 이름만 있으면 이름으로 검색
+    if (!data && name) {
+      const r1 = await sb.from('submissions').select('*').ilike('name1', `%${name}%`).maybeSingle();
+      if (r1.data) { data = r1.data; }
+      if (!data) {
+        const r2 = await sb.from('submissions').select('*').ilike('name2', `%${name}%`).maybeSingle();
+        if (r2.data) data = r2.data;
+      }
+    }
     if (!data) {
-      result.innerHTML = '<div class="smsg err" style="display:block">해당 정보로 제출된 활동지가 없습니다.</div>';
+      result.innerHTML = '<div class="smsg err" style="display:block">해당 정보로 제출된 활동지가 없습니다.<br><span style="font-size:11px;color:#991B1B">팀원 1 또는 팀원 2의 이름/학번으로 검색해 보세요.</span></div>';
       hideLoading(); return;
     }
+    const error = null;
     await loadQs();
     const ans = data.answers || {};
     const submittedAt = data.submitted_at
