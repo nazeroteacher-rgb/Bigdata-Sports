@@ -264,7 +264,7 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
 <div id="home" class="screen active">
   <div class="hero">
     <div class="hero-title">맞춤형 맨몸 운동 분석<br><span class="highlight">인공지능 만들기</span></div>
-    <div class="hero-sub">내 몸의 데이터로 직접 훈련시키는 AI 운동 코치</div>
+    <div class="hero-sub">스포츠 생활·빅데이터 분석 융합 수업</div>
     <div class="badge-row">
       <span class="bdg">하루 5차시</span>
       <span class="bdg">2인 1조</span>
@@ -311,6 +311,119 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
   </div>
 </div>
 <!-- STUDENT VIEWER -->
+<div id="worksheet" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="go('home')"><i class="ti ti-arrow-left"></i> 홈</button>
+    <div><div class="tb-title">수업 활동지</div></div>
+  </div>
+
+  <!-- 탭 선택 바 -->
+  <div class="ws-tab-bar">
+    <button class="ws-tab active" id="ws-tab-write" onclick="wsShowTab('write',this)">
+      <i class="ti ti-pencil-plus"></i> 활동지 작성
+    </button>
+    <button class="ws-tab" id="ws-tab-view" onclick="wsShowTab('view',this)">
+      <i class="ti ti-search"></i> 활동지 조회
+    </button>
+  </div>
+
+  <!-- ① 작성 탭 -->
+  <div id="ws-panel-write" class="content">
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:7px">
+        <i class="ti ti-users" style="font-size:15px;color:var(--primary)"></i>팀 정보 입력
+      </div>
+      <div class="mem-block">
+        <div class="mem-hdr"><span class="mtag m1">팀원 1</span><span style="font-size:11px;color:var(--text3)">(대표 입력자)</span></div>
+        <div class="frow">
+          <div class="fg"><label class="fl">이름</label><input class="fi" id="ws-n1" type="text" placeholder="홍길동" oninput="updateLabels()"></div>
+          <div class="fg"><label class="fl">학번</label><input class="fi" id="ws-id1" type="text" placeholder="1111"></div>
+        </div>
+      </div>
+      <div class="mem-block">
+        <div class="mem-hdr"><span class="mtag m2">팀원 2</span></div>
+        <div class="frow">
+          <div class="fg"><label class="fl">이름</label><input class="fi" id="ws-n2" type="text" placeholder="김철수" oninput="updateLabels()"></div>
+          <div class="fg"><label class="fl">학번</label><input class="fi" id="ws-id2" type="text" placeholder="1112"></div>
+        </div>
+      </div>
+    </div>
+    <div class="team-div"><div class="team-div-line"></div><div class="team-div-label"><i class="ti ti-users" style="font-size:11px;vertical-align:-1px;margin-right:3px"></i>2인 공동 활동지</div><div class="team-div-line"></div></div>
+    <div id="ws-questions"></div>
+    <div class="team-div"><div class="team-div-line"></div><div class="team-div-label"><i class="ti ti-writing" style="font-size:11px;vertical-align:-1px;margin-right:3px"></i>개인 소감문 (각자 작성)</div><div class="team-div-line"></div></div>
+    <div class="mem-block"><div class="mem-hdr"><span class="mtag m1" id="ref-lbl-1">팀원 1 소감문</span></div><textarea class="fta" id="ws-ref1" placeholder="수업을 통해 느낀 점, 배운 점, 더 알고 싶은 점을 자유롭게 작성하세요..."></textarea></div>
+    <div class="mem-block"><div class="mem-hdr"><span class="mtag m2" id="ref-lbl-2">팀원 2 소감문</span></div><textarea class="fta" id="ws-ref2" placeholder="수업을 통해 느낀 점, 배운 점, 더 알고 싶은 점을 자유롭게 작성하세요..."></textarea></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:8px">
+      <button class="abtn p" onclick="saveWorksheet()" style="padding:9px 24px;font-size:13px">
+        <i class="ti ti-device-floppy"></i> 제출하기
+      </button>
+    </div>
+    <div id="ws-status" class="smsg"></div>
+  </div>
+
+  <!-- ② 조회 탭 -->
+  <div id="ws-panel-view" class="content" style="display:none;max-width:680px">
+    <div class="card" style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:7px">
+        <i class="ti ti-search" style="font-size:15px;color:var(--accent)"></i>활동지 검색
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">팀원 1 또는 팀원 2의 이름/학번으로 검색하세요</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input class="fi" id="ws-search-name" type="text" placeholder="이름 (예: 홍길동)" style="flex:1">
+        <input class="fi" id="ws-search-id" type="text" placeholder="학번 (예: 1111)" style="flex:1" onkeydown="if(event.key==='Enter')wsSearch()">
+        <button class="abtn" onclick="wsSearch()" style="flex-shrink:0;border-color:var(--accent);color:var(--accent);font-weight:600">
+          <i class="ti ti-search"></i> 검색
+        </button>
+      </div>
+    </div>
+    <div id="ws-search-result"></div>
+  </div>
+
+  <!-- ③ 수정 패널 -->
+  <div id="ws-panel-edit" class="content" style="display:none">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <button class="abtn" onclick="wsBackToView()" style="font-size:11px">
+        <i class="ti ti-arrow-left"></i> 조회로 돌아가기
+      </button>
+      <span style="font-size:13px;font-weight:700;color:var(--text)">활동지 수정</span>
+    </div>
+    <div class="smsg info" style="display:block;margin-bottom:12px">
+      <i class="ti ti-info-circle" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>
+      수정 후 아래 <strong>수정 저장</strong> 버튼을 눌러야 반영됩니다.
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:7px">
+        <i class="ti ti-users" style="font-size:15px;color:var(--primary)"></i>팀 정보
+      </div>
+      <div class="mem-block">
+        <div class="mem-hdr"><span class="mtag m1">팀원 1</span></div>
+        <div class="frow">
+          <div class="fg"><label class="fl">이름</label><input class="fi" id="ws-en1" type="text" oninput="updateEditLabels()"></div>
+          <div class="fg"><label class="fl">학번 (변경 불가)</label><input class="fi" id="ws-eid1" type="text" readonly style="background:var(--bg);color:var(--text3);cursor:not-allowed"></div>
+        </div>
+      </div>
+      <div class="mem-block">
+        <div class="mem-hdr"><span class="mtag m2">팀원 2</span></div>
+        <div class="frow">
+          <div class="fg"><label class="fl">이름</label><input class="fi" id="ws-en2" type="text" oninput="updateEditLabels()"></div>
+          <div class="fg"><label class="fl">학번</label><input class="fi" id="ws-eid2" type="text"></div>
+        </div>
+      </div>
+    </div>
+    <div class="team-div"><div class="team-div-line"></div><div class="team-div-label"><i class="ti ti-users" style="font-size:11px;vertical-align:-1px;margin-right:3px"></i>2인 공동 활동지</div><div class="team-div-line"></div></div>
+    <div id="ws-edit-questions"></div>
+    <div class="team-div"><div class="team-div-line"></div><div class="team-div-label"><i class="ti ti-writing" style="font-size:11px;vertical-align:-1px;margin-right:3px"></i>개인 소감문</div><div class="team-div-line"></div></div>
+    <div class="mem-block"><div class="mem-hdr"><span class="mtag m1" id="edit-lbl-1">팀원 1 소감문</span></div><textarea class="fta" id="ws-eref1" placeholder="소감문을 작성하세요..."></textarea></div>
+    <div class="mem-block"><div class="mem-hdr"><span class="mtag m2" id="edit-lbl-2">팀원 2 소감문</span></div><textarea class="fta" id="ws-eref2" placeholder="소감문을 작성하세요..."></textarea></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:8px">
+      <button class="abtn p" onclick="saveEditWorksheet()" style="padding:9px 24px;font-size:13px">
+        <i class="ti ti-device-floppy"></i> 수정 저장
+      </button>
+    </div>
+    <div id="ws-edit-status" class="smsg"></div>
+  </div>
+</div>
+
 <div id="viewer" class="screen">
   <div class="topbar">
     <button class="back-btn" onclick="stopViewer();go('home')"><i class="ti ti-arrow-left"></i> 홈</button>
