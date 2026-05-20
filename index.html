@@ -36,7 +36,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .screen{display:none;min-height:100vh;flex-direction:column}
 .screen.active{display:flex}
 
-#lov{position:absolute;inset:0;background:rgba(10,15,40,0.72);backdrop-filter:blur(4px);z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;min-height:200px}
+#lov{position:fixed;inset:0;background:rgba(10,15,40,0.72);backdrop-filter:blur(4px);z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px}
 #lov.show{display:flex}
 .spinner{width:44px;height:44px;border:3px solid rgba(255,255,255,0.15);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -258,7 +258,7 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
 <body>
 
 <!-- LOADING -->
-<div id="loading-overlay"><div class="spinner"></div><p id="loading-text">로딩 중...</p></div>
+<div id="loading-overlay" style="display:none!important"><div class="spinner"></div><p id="loading-text">로딩 중...</p></div>
 
 <!-- HOME -->
 <div id="home" class="screen active">
@@ -921,8 +921,8 @@ let WS_URL = `ws://${getSavedServerIP()}:3000`;
 /* ══════════════════════════════════════════
    유틸
 ══════════════════════════════════════════ */
-function showLoading(m) { document.getElementById('loading-text').textContent = m||'로딩 중...'; document.getElementById('loading-overlay').classList.add('show'); }
-function hideLoading() { document.getElementById('loading-overlay').classList.remove('show'); }
+function showLoading(m){ }
+function hideLoading(){ }
 function updateLabels() {
   const n1 = document.getElementById('ws-n1').value.trim();
   const n2 = document.getElementById('ws-n2').value.trim();
@@ -1398,54 +1398,64 @@ async function saveWorksheet() {
 
 /* ── 활동지 검색 ── */
 async function wsSearch() {
-  const name = document.getElementById('ws-search-name').value.trim();
-  const id1  = document.getElementById('ws-search-id').value.trim();
+  const name   = document.getElementById('ws-search-name').value.trim();
+  const id1    = document.getElementById('ws-search-id').value.trim();
   const result = document.getElementById('ws-search-result');
-  if (!name && !id1) { result.innerHTML = '<div class="smsg err" style="display:block">이름 또는 학번을 입력해 주세요.</div>'; return; }
-  if (!sb) { result.innerHTML = '<div class="smsg err" style="display:block">DB가 연결되지 않았습니다.</div>'; return; }
+
+  if (!name && !id1) {
+    result.innerHTML = '<div class="smsg err" style="display:block">이름 또는 학번을 입력해 주세요.</div>';
+    return;
+  }
+  if (!sb) {
+    result.innerHTML = '<div class="smsg err" style="display:block">DB가 연결되지 않았습니다.</div>';
+    return;
+  }
+
   showLoading('검색 중...');
   try {
-    let data = null;
-    // 학번이 있으면 학번 우선 검색 (팀원1, 팀원2 모두)
+    // 전체 목록을 불러와서 클라이언트에서 필터링 (가장 확실한 방법)
+    const { data: all, error } = await sb.from('submissions').select('*');
+    if (error) throw error;
+
+    let found = null;
+
     if (id1) {
-      const r1 = await sb.from('submissions').select('*').eq('student_id1', id1).maybeSingle();
-      if (r1.data) { data = r1.data; }
-      if (!data) {
-        const r2 = await sb.from('submissions').select('*').eq('student_id2', id1).maybeSingle();
-        if (r2.data) data = r2.data;
-      }
+      // 학번으로 검색 — 팀원1 또는 팀원2
+      found = all.find(r => r.student_id1 === id1 || r.student_id2 === id1) || null;
     }
-    // 학번으로 못 찾았거나 학번 없이 이름만 있으면 이름으로 검색
-    if (!data && name) {
-      const r1 = await sb.from('submissions').select('*').ilike('name1', `%${name}%`).maybeSingle();
-      if (r1.data) { data = r1.data; }
-      if (!data) {
-        const r2 = await sb.from('submissions').select('*').ilike('name2', `%${name}%`).maybeSingle();
-        if (r2.data) data = r2.data;
-      }
+
+    if (!found && name) {
+      // 이름으로 검색 — 팀원1 또는 팀원2 (부분일치)
+      found = all.find(r =>
+        (r.name1 && r.name1.includes(name)) ||
+        (r.name2 && r.name2.includes(name))
+      ) || null;
     }
-    if (!data) {
+
+    if (!found) {
       result.innerHTML = '<div class="smsg err" style="display:block">해당 정보로 제출된 활동지가 없습니다.<br><span style="font-size:11px;color:#991B1B">팀원 1 또는 팀원 2의 이름/학번으로 검색해 보세요.</span></div>';
-      hideLoading(); return;
+      hideLoading();
+      return;
     }
-    const error = null;
+
     await loadQs();
-    const ans = data.answers || {};
-    const submittedAt = data.submitted_at
-      ? new Date(data.submitted_at).toLocaleString('ko-KR', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false })
+    const ans = found.answers || {};
+    const submittedAt = found.submitted_at
+      ? new Date(found.submitted_at).toLocaleString('ko-KR', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false })
       : '';
+
     result.innerHTML = `
       <div class="view-result-card">
         <div class="view-result-header">
-          <div class="view-avatar">${(data.name1||'?').charAt(0)}</div>
+          <div class="view-avatar">${(found.name1||'?').charAt(0)}</div>
           <div style="flex:1;min-width:0">
-            <div style="font-size:14px;font-weight:700">${data.name1} &amp; ${data.name2}</div>
+            <div style="font-size:14px;font-weight:700">${found.name1} &amp; ${found.name2}</div>
             <div style="font-size:11px;color:var(--text3);margin-top:2px">
-              학번 ${data.student_id1} · ${data.student_id2}
+              학번 ${found.student_id1} · ${found.student_id2}
               ${submittedAt ? `&nbsp;|&nbsp; ${submittedAt} 제출` : ''}
             </div>
           </div>
-          <button class="abtn" onclick="wsOpenEdit('${data.student_id1}')"
+          <button class="abtn" onclick="wsOpenEdit('${found.student_id1}')"
             style="flex-shrink:0;border-color:var(--accent);color:var(--accent);font-weight:600">
             <i class="ti ti-edit"></i> 수정하기
           </button>
@@ -1458,12 +1468,12 @@ async function wsSearch() {
           </div>`).join('')}
         <div class="sec-label">개인 소감문</div>
         <div class="mem-block">
-          <div class="mem-hdr"><span class="mtag m1">${data.name1} 소감문</span></div>
-          <div style="font-size:13px;line-height:1.65">${data.reflection1 || '<span style="color:var(--text3)">미작성</span>'}</div>
+          <div class="mem-hdr"><span class="mtag m1">${found.name1} 소감문</span></div>
+          <div style="font-size:13px;line-height:1.65">${found.reflection1 || '<span style="color:var(--text3)">미작성</span>'}</div>
         </div>
         <div class="mem-block">
-          <div class="mem-hdr"><span class="mtag m2">${data.name2} 소감문</span></div>
-          <div style="font-size:13px;line-height:1.65">${data.reflection2 || '<span style="color:var(--text3)">미작성</span>'}</div>
+          <div class="mem-hdr"><span class="mtag m2">${found.name2} 소감문</span></div>
+          <div style="font-size:13px;line-height:1.65">${found.reflection2 || '<span style="color:var(--text3)">미작성</span>'}</div>
         </div>
       </div>`;
   } catch(e) {
