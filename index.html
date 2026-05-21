@@ -2080,8 +2080,10 @@ function dlSeteukExcel() {
 
 /* 초기화 */
 (()=>{
-  // http://IP:3000 으로 접속하면 자동으로 viewer 화면으로
-  if (location.protocol === 'http:' && location.port === '3000' && !location.pathname.includes('teacher')) {
+  // localhost로 접속하면 홈 유지 (교사용)
+  // 외부 IP로 접속하면 viewer 화면으로 자동 이동 (학생용)
+  const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  if (!isLocalhost && location.protocol === 'http:' && location.port === '3000') {
     setTimeout(() => go('viewer'), 300);
   } else if (location.hash === '#viewer') {
     setTimeout(() => go('viewer'), 300);
