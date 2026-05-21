@@ -1236,22 +1236,41 @@ async function handleViewerMessage(e) {
     return;
   }
   if (msg.type === 'offer') {
-    if (viewerPc) viewerPc.close();
-    viewerPc = new RTCPeerConnection({ iceServers: ICE_SERVERS, iceCandidatePoolSize: 10 });
-    viewerPc.ontrack = e => {
-      document.getElementById('viewer-video').srcObject = e.streams[0];
-      setViewerStatus('connected', '연결됨 — WebRTC 실시간 스트리밍');
-      document.getElementById('viewer-badge').className = 'cam-badge live';
-      document.getElementById('viewer-badge').innerHTML = '<div class="cam-dot"></div> LIVE';
-      document.getElementById('viewer-sub').textContent = 'LIVE 중';
-    };
-    viewerPc.onicecandidate = ev => {
-      if (ev.candidate) ws.send(JSON.stringify({ type: 'ice-candidate', candidate: ev.candidate, viewerId: MY_ID }));
-    };
-    await viewerPc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
-    const answer = await viewerPc.createAnswer();
-    await viewerPc.setLocalDescription(answer);
-    ws.send(JSON.stringify({ type: 'answer', sdp: viewerPc.localDescription }));
+    try {
+      if (viewerPc) { try { viewerPc.close(); } catch(e) {} viewerPc = null; }
+      viewerPc = new RTCPeerConnection({ iceServers: ICE_SERVERS, iceCandidatePoolSize: 10 });
+      viewerPc.ontrack = e => {
+        const video = document.getElementById('viewer-video');
+        if (video) video.srcObject = e.streams[0];
+        setViewerStatus('connected', '연결됨 — WebRTC 실시간 스트리밍');
+        const badge = document.getElementById('viewer-badge');
+        if (badge) { badge.className = 'cam-badge live'; badge.innerHTML = '<div class="cam-dot"></div> LIVE'; }
+        const sub = document.getElementById('viewer-sub');
+        if (sub) sub.textContent = 'LIVE 중';
+      };
+      viewerPc.onicecandidate = ev => {
+        if (ev.candidate && ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'ice-candidate', candidate: ev.candidate, viewerId: MY_ID }));
+        }
+      };
+      viewerPc.onconnectionstatechange = () => {
+        if (viewerPc && (viewerPc.connectionState === 'failed' || viewerPc.connectionState === 'disconnected')) {
+          setViewerStatus('waiting', '연결 끊김. 재연결 중...');
+          setTimeout(connectViewer, 2000);
+        }
+      };
+      await viewerPc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+      const answer = await viewerPc.createAnswer();
+      await viewerPc.setLocalDescription(answer);
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'answer', sdp: viewerPc.localDescription }));
+      }
+    } catch(e) {
+      console.error('WebRTC offer 처리 오류:', e);
+      setViewerStatus('error', '연결 오류: ' + e.message);
+      if (viewerPc) { try { viewerPc.close(); } catch(e2) {} viewerPc = null; }
+      setTimeout(connectViewer, 3000);
+    }
     return;
   }
   if (msg.type === 'ice-candidate' && msg.candidate && viewerPc) {
@@ -2062,8 +2081,10 @@ function dlSeteukExcel() {
 
 /* 초기화 */
 (()=>{
-  // URL 해시로 바로 이동 (#viewer, #worksheet 등)
-  if (location.hash === '#viewer') {
+  // http://IP:3000 으로 접속하면 자동으로 viewer 화면으로
+  if (location.protocol === 'http:' && location.port === '3000' && !location.pathname.includes('teacher')) {
+    setTimeout(() => go('viewer'), 300);
+  } else if (location.hash === '#viewer') {
     setTimeout(() => go('viewer'), 300);
   }
   initSupabase(); const r=lsGet('questions'); if(r)questions=r; setTimeout(()=>{loadSavedIP();loadSbInputs();}, 100); })();
@@ -2543,12 +2564,10 @@ window.saveObs = async function(id1, m, msgEl) {
 function goViewer() {
   const ip = localStorage.getItem('server-ip');
   if (ip && ip.trim()) {
-    // 저장된 IP가 있으면 http://IP:3000 으로 새 탭 열기
     const url = 'http://' + ip.trim() + ':3000';
-    // 새 탭에서 viewer 화면으로 바로 이동
-    window.open(url + '#viewer', '_blank');
+    // 팝업 차단 우회: 현재 창에서 이동
+    location.href = url;
   } else {
-    // IP 없으면 IP 입력 안내 후 viewer 화면으로
     const ok = confirm('선생님 컴퓨터 IP가 설정되어 있지 않습니다.\n\n교사용 관리 → 화면 방송 탭에서 IP를 먼저 저장해주세요.\n\n지금 바로 연결 화면으로 이동할까요?');
     if (ok) go('viewer');
   }
