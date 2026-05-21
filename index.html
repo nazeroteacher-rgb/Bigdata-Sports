@@ -674,9 +674,18 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
     <!-- AI 선택 + 전체생성 + 엑셀 -->
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
       <div class="ai-sel" style="margin-bottom:0">
-        <button class="ai-chip sel" onclick="selAI('claude',this)">Claude</button>
-        <button class="ai-chip" onclick="selAI('gemini',this)">Gemini</button>
-        <button class="ai-chip" onclick="selAI('gpt',this)">ChatGPT</button>
+        <button class="ai-chip" id="ai-btn-gemini" onclick="selAI('gemini',this)">
+          <i class="ti ti-stars" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>Gemini
+        </button>
+        <button class="ai-chip sel" id="ai-btn-gpt" onclick="selAI('gpt',this)">
+          <i class="ti ti-message-circle" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>ChatGPT
+        </button>
+        <button class="ai-chip" id="ai-btn-claude" onclick="selAI('claude',this)">
+          <i class="ti ti-robot" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>Claude
+        </button>
+        <button class="abtn" onclick="openApiKeyModal()" style="font-size:11px;padding:5px 11px;border-style:dashed">
+          <i class="ti ti-key"></i> API 키 설정
+        </button>
       </div>
       <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
         <button class="abtn green" id="gen-all-btn" onclick="genAllSeteuk()" style="font-size:12px;padding:7px 16px">
@@ -691,7 +700,7 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
       </div>
     </div>
     <div id="gen-all-status" class="smsg" style="margin-bottom:10px"></div>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:10px" id="ai-note"></div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:8px" id="ai-note"></div>
     <div id="sk-list"></div>
     <div class="empty-st" id="sk-empty" style="display:none"><div class="empty-icon">✨</div><p>제출된 활동지가 있어야 세특을 생성할 수 있습니다</p></div>
   </div>
@@ -1036,6 +1045,12 @@ function switchTab(btn, id) {
   if (id === 'tab-seteuk') {
     const inp = document.getElementById('seteuk-prompt-input');
     if (inp) inp.value = localStorage.getItem('seteuk-prompt') || '';
+    loadApiKeys();
+    // GPT 버튼 기본 선택 표시
+    setTimeout(() => {
+      const gptBtn = document.getElementById('ai-btn-gpt');
+      if (gptBtn) selAI('gpt', gptBtn);
+    }, 100);
   }
   if (id === 'tab-materials-mgr') loadMaterialsMgr();
 }
@@ -1300,6 +1315,7 @@ async function loadSubmissions() {
           answers: r.answers || {},
           ref1: r.reflection1 || '', ref2: r.reflection2 || '',
           seteuk1: r.seteuk1 || '', seteuk2: r.seteuk2 || '',
+          obs1: r.obs1 || '', obs2: r.obs2 || '',
           submittedAt: r.submitted_at
         }));
       }
@@ -1523,6 +1539,21 @@ function renderSkList() {
       obsArea.value = obsVal;
       left.appendChild(obsArea);
 
+      // 관찰내용 저장 버튼
+      const obsSaveRow = document.createElement('div');
+      obsSaveRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:6px';
+      const obsSaveBtn = document.createElement('button');
+      obsSaveBtn.className = 'abtn';
+      obsSaveBtn.style.cssText = 'font-size:11px;border-color:var(--accent);color:var(--accent)';
+      obsSaveBtn.innerHTML = '<i class="ti ti-device-floppy"></i> 관찰 내용 저장';
+      const obsSaveMsg = document.createElement('span');
+      obsSaveMsg.id = 'obs-msg-' + s.id1 + '-' + m;
+      obsSaveMsg.style.cssText = 'font-size:11px;color:var(--accent);display:none';
+      obsSaveBtn.addEventListener('click', () => saveObs(s.id1, m, obsSaveMsg));
+      obsSaveRow.appendChild(obsSaveBtn);
+      obsSaveRow.appendChild(obsSaveMsg);
+      left.appendChild(obsSaveRow);
+
       body.appendChild(left);
 
       // ── 오른쪽: 세특 완성
@@ -1595,19 +1626,64 @@ async function genSeteuk(tid, m, btn) {
   ].join(NL);
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{role:'user', content: prompt}]
-      })
-    });
-    const data = await res.json();
-    const text = (data.content && data.content.find(c => c.type==='text') || {}).text || '생성 실패';
+    // 선택된 AI에 따라 API 호출
+    const activeAI = selectedAI || 'gpt';
+    const activeKey = apiKeys[activeAI];
+    if (!activeKey) throw new Error(activeAI + ' API 키가 없습니다. 상단 "API 키 설정" 버튼을 눌러 등록해 주세요.');
 
-    // textarea에 결과 쓰기
+    let text = '생성 실패';
+
+    if (activeAI === 'gemini') {
+      // Gemini API v1
+      const gRes = await fetch(
+        'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=' + apiKeys.gemini,
+        {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({contents:[{parts:[{text: prompt}]}]})
+        }
+      );
+      if (!gRes.ok) {
+        const errJson = await gRes.json().catch(()=>({}));
+        throw new Error((errJson.error && errJson.error.message) || ('Gemini 오류 ' + gRes.status));
+      }
+      const gData = await gRes.json();
+      text = (gData.candidates && gData.candidates[0] &&
+              gData.candidates[0].content && gData.candidates[0].content.parts &&
+              gData.candidates[0].content.parts[0].text) || '생성 실패';
+
+    } else if (activeAI === 'gpt') {
+      // OpenAI API
+      const oRes = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+apiKeys.gpt},
+        body: JSON.stringify({model:'gpt-4o-mini', max_tokens:1000, messages:[{role:'user',content:prompt}]})
+      });
+      if (!oRes.ok) {
+        const errJson = await oRes.json().catch(()=>({}));
+        throw new Error((errJson.error && errJson.error.message) || ('OpenAI 오류 ' + oRes.status));
+      }
+      const oData = await oRes.json();
+      text = (oData.choices && oData.choices[0] && oData.choices[0].message.content) || '생성 실패';
+
+    } else if (activeAI === 'claude') {
+      // Claude — Supabase Edge Function 경유
+      const edgeUrl = SB_URL + '/functions/v1/claude-proxy';
+      const cRes = await fetch(edgeUrl, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+SB_ANON},
+        body: JSON.stringify({prompt: prompt, apiKey: apiKeys.claude})
+      });
+      if (!cRes.ok) {
+        const errJson = await cRes.json().catch(()=>({}));
+        throw new Error(errJson.error || ('Claude 오류 ' + cRes.status));
+      }
+      const cData = await cRes.json();
+      if (cData.error) throw new Error(cData.error);
+      text = cData.text || '생성 실패';
+    }
+
+        // textarea에 결과 쓰기
     const skEl = document.getElementById('sk-' + tid + '-' + m);
     if (skEl) skEl.value = text;
 
@@ -1890,12 +1966,21 @@ function fakeDownload(btn){btn.innerHTML='<i class="ti ti-check"></i> 완료';bt
 function dlExcel(){
   if(!submissions.length){alert('제출된 활동지가 없습니다.');return;}
 
-function savePrompt() {
-  const val = document.getElementById('seteuk-prompt-input').value.trim();
-  localStorage.setItem('seteuk-prompt', val);
+async function savePrompt() {
+  const val = (document.getElementById('seteuk-prompt-input')||{}).value||'';
   const msg = document.getElementById('prompt-save-msg');
-  msg.className = 'smsg ok'; msg.textContent = '✓ 프롬프트가 저장되었습니다. 이후 세특 생성 시 자동 적용됩니다.';
-  setTimeout(() => msg.style.display = 'none', 3000);
+  localStorage.setItem('seteuk-prompt', val);  // 로컬 백업
+  if (sb) {
+    try {
+      await sb.from('settings').upsert({key:'seteuk-prompt', value:val}, {onConflict:'key'});
+      msg.className='smsg ok'; msg.textContent='✓ 프롬프트가 저장됐습니다! (다른 컴퓨터에서도 유지됩니다)';
+    } catch(e) {
+      msg.className='smsg ok'; msg.textContent='✓ 로컬에 저장됐습니다. (DB 연결 시 자동 동기화)';
+    }
+  } else {
+    msg.className='smsg ok'; msg.textContent='✓ 로컬에 저장됐습니다.';
+  }
+  setTimeout(()=>{ if(msg) msg.style.display='none'; }, 3000);
 }
 
 function dlSeteukExcel() {
@@ -2190,6 +2275,283 @@ async function genAllSeteuk() {
   setTimeout(() => statusEl.style.display = 'none', 4000);
 }
 
+/* ── 교사 관찰 내용 저장 ── */
+async function saveObs(id1, m, msgEl) {
+  const obsEl = document.getElementById('obs-' + id1 + '-' + m);
+  if (!obsEl) return;
+  const obs = obsEl.value.trim();
+  const s = submissions.find(x => x.id1 === id1);
+  if (!s || !s._id) { if(msgEl){msgEl.textContent='저장 실패';msgEl.style.display='inline';} return; }
+
+  if (sb) {
+    try {
+      const upd = {updated_at: new Date().toISOString()};
+      upd['obs'+m] = obs;
+      const {error} = await sb.from('submissions').update(upd).eq('id', s._id);
+      if (error) throw error;
+      if (m===1) s.obs1=obs; else s.obs2=obs;
+      if (msgEl) {
+        msgEl.textContent = '✓ 저장됨';
+        msgEl.style.display = 'inline';
+        setTimeout(()=>{ msgEl.style.display='none'; }, 2000);
+      }
+    } catch(e) {
+      if (msgEl) { msgEl.textContent='저장 실패: '+e.message; msgEl.style.display='inline'; }
+    }
+  }
+}
+
+
+/* ══════════════════════════════════════════
+   API 키 모달 관련 함수
+══════════════════════════════════════════ */
+let apiKeys = { gemini:'', gpt:'', claude:'' };
+async function loadApiKeys() {
+  if (!sb) return;
+  try {
+    // API 키 로드
+    for (const ai of ['gemini','gpt','claude']) {
+      const {data} = await sb.from('settings').select('value').eq('key','api-key-'+ai).maybeSingle();
+      if (data && data.value) apiKeys[ai] = data.value;
+    }
+    updateAiNote();
+
+    // 프롬프트 로드 (DB 우선)
+    const {data: pData} = await sb.from('settings').select('value').eq('key','seteuk-prompt').maybeSingle();
+    if (pData && pData.value) {
+      localStorage.setItem('seteuk-prompt', pData.value);
+      const inp = document.getElementById('seteuk-prompt-input');
+      if (inp) inp.value = pData.value;  // 항상 DB 값으로 덮어씌우기
+    }
+  } catch(e) { console.error('설정 로드 실패:', e); }
+}
+
+function openApiKeyModal() {
+  const modal = document.getElementById('api-key-modal');
+  if (!modal) { alert('모달을 찾을 수 없습니다.'); return; }
+  document.getElementById('key-gemini').value = apiKeys.gemini || '';
+  document.getElementById('key-gpt').value    = apiKeys.gpt    || '';
+  document.getElementById('key-claude').value = apiKeys.claude || '';
+  document.getElementById('api-key-msg').style.display = 'none';
+  modal.style.display = 'flex';
+}
+
+function closeApiKeyModal() {
+  const modal = document.getElementById('api-key-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function toggleKeyVis(id) {
+  const el = document.getElementById(id);
+  if (el) el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+async function saveApiKeys() {
+  const msg = document.getElementById('api-key-msg');
+  msg.className = 'smsg info'; msg.textContent = '저장 중...'; msg.style.display = 'block';
+  const vals = {
+    gemini: (document.getElementById('key-gemini')||{}).value||'',
+    gpt:    (document.getElementById('key-gpt')||{}).value||'',
+    claude: (document.getElementById('key-claude')||{}).value||''
+  };
+  if (!sb) { msg.className='smsg err'; msg.textContent='DB가 연결되지 않았습니다.'; return; }
+  try {
+    for (const [ai, val] of Object.entries(vals)) {
+      if (val.trim()) {
+        await sb.from('settings').upsert({key:'api-key-'+ai, value:val.trim()}, {onConflict:'key'});
+        apiKeys[ai] = val.trim();
+      }
+    }
+    msg.className='smsg ok'; msg.textContent='✓ API 키가 저장됐습니다!';
+    updateAiNote();
+    setTimeout(closeApiKeyModal, 1500);
+  } catch(e) {
+    msg.className='smsg err'; msg.textContent='저장 실패: '+e.message;
+  }
+}
+
+function updateAiNote() {
+  const note = document.getElementById('ai-note');
+  if (!note) return;
+  const labels = { gemini:'Gemini', gpt:'ChatGPT', claude:'Claude' };
+  const connected = Object.entries(apiKeys).filter(([k,v])=>v).map(([k])=>labels[k]);
+  if (connected.length) {
+    note.innerHTML = '<i class="ti ti-circle-check" style="font-size:13px;color:var(--accent);margin-right:4px"></i>'
+      + '<span style="color:var(--accent)">'+connected.join(', ')+' API 키 등록됨</span>';
+  } else {
+    note.innerHTML = '<span style="color:var(--text3)">API 키 설정 버튼을 눌러 ChatGPT(GPT-4o mini) API 키를 등록해 주세요.</span>';
+  }
+}
+
+// 모달 바깥 클릭 시 닫기
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('api-key-modal');
+  if (modal) modal.addEventListener('click', function(e){ if(e.target===modal) closeApiKeyModal(); });
+});
+
+
+/* ══ 전역 노출 함수 (HTML onclick에서 호출) ══ */
+window.savePrompt = async function() {
+  const inp = document.getElementById('seteuk-prompt-input');
+  const val = inp ? inp.value.trim() : '';
+  const msg = document.getElementById('prompt-save-msg');
+  localStorage.setItem('seteuk-prompt', val);
+  if (sb) {
+    try {
+      await sb.from('settings').upsert({key:'seteuk-prompt', value:val}, {onConflict:'key'});
+      if (msg) { msg.className='smsg ok'; msg.textContent='✓ 저장됐습니다! 다른 컴퓨터에서도 유지됩니다.'; msg.style.display='block'; }
+    } catch(e) {
+      if (msg) { msg.className='smsg ok'; msg.textContent='✓ 로컬에 저장됐습니다.'; msg.style.display='block'; }
+    }
+  } else {
+    if (msg) { msg.className='smsg ok'; msg.textContent='✓ 저장됐습니다.'; msg.style.display='block'; }
+  }
+  if (msg) setTimeout(()=>{ msg.style.display='none'; }, 3000);
+};
+
+window.openApiKeyModal = function() {
+  const modal = document.getElementById('api-key-modal');
+  if (!modal) return;
+  document.getElementById('key-gemini').value = apiKeys.gemini || '';
+  document.getElementById('key-gpt').value    = apiKeys.gpt    || '';
+  document.getElementById('key-claude').value = apiKeys.claude || '';
+  const m = document.getElementById('api-key-msg');
+  if (m) m.style.display = 'none';
+  modal.style.display = 'flex';
+};
+
+window.saveApiKeys = async function() {
+  const msg = document.getElementById('api-key-msg');
+  if (msg) { msg.className='smsg info'; msg.textContent='저장 중...'; msg.style.display='block'; }
+  const vals = {
+    gemini: (document.getElementById('key-gemini')||{}).value||'',
+    gpt:    (document.getElementById('key-gpt')||{}).value||'',
+    claude: (document.getElementById('key-claude')||{}).value||''
+  };
+  if (!sb) {
+    if (msg) { msg.className='smsg err'; msg.textContent='DB가 연결되지 않았습니다.'; }
+    return;
+  }
+  try {
+    for (const [ai, val] of Object.entries(vals)) {
+      if (val.trim()) {
+        await sb.from('settings').upsert({key:'api-key-'+ai, value:val.trim()}, {onConflict:'key'});
+        apiKeys[ai] = val.trim();
+      }
+    }
+    if (msg) { msg.className='smsg ok'; msg.textContent='✓ API 키가 저장됐습니다!'; }
+    updateAiNote();
+    setTimeout(closeApiKeyModal, 1500);
+  } catch(e) {
+    if (msg) { msg.className='smsg err'; msg.textContent='저장 실패: '+e.message; }
+  }
+};
+
+window.closeApiKeyModal = function() {
+  const modal = document.getElementById('api-key-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.toggleKeyVis = function(id) {
+  const el = document.getElementById(id);
+  if (el) el.type = el.type === 'password' ? 'text' : 'password';
+};
+
+
+window.saveObs = async function(id1, m, msgEl) {
+  const obsEl = document.getElementById('obs-'+id1+'-'+m);
+  if (!obsEl) return;
+  const obs = obsEl.value.trim();
+  const s = submissions.find(x => x.id1 === id1);
+  if (!s || !s._id) {
+    if (msgEl) { msgEl.textContent='저장 실패 (데이터 없음)'; msgEl.style.display='inline'; }
+    return;
+  }
+  if (m===1) s.obs1=obs; else s.obs2=obs;
+  if (sb) {
+    try {
+      const upd = {updated_at: new Date().toISOString()};
+      upd['obs'+m] = obs;
+      const {error} = await sb.from('submissions').update(upd).eq('id', s._id);
+      if (error) throw error;
+      if (msgEl) {
+        msgEl.textContent = '✓ 저장됨';
+        msgEl.style.display = 'inline';
+        setTimeout(()=>{ msgEl.style.display='none'; }, 2000);
+      }
+    } catch(e) {
+      if (msgEl) { msgEl.textContent='저장 실패: '+e.message; msgEl.style.display='inline'; }
+    }
+  } else {
+    if (msgEl) { msgEl.textContent='DB 미연결'; msgEl.style.display='inline'; }
+  }
+};
+
 </script>
+
+<!-- API 키 설정 모달 -->
+<div id="api-key-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9998;align-items:center;justify-content:center">
+  <div style="background:var(--card);border-radius:var(--rad-xl);padding:28px;max-width:480px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px">
+        <i class="ti ti-key" style="font-size:18px;color:var(--primary)"></i>AI API 키 설정
+      </div>
+      <button onclick="closeApiKeyModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text3);padding:4px">×</button>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:18px;line-height:1.7;background:var(--bg);padding:10px 13px;border-radius:var(--rad)">
+      입력한 API 키는 Supabase에 암호화 저장되며, 다른 선생님도 같은 키로 세특을 생성할 수 있습니다.
+    </div>
+
+    <!-- Gemini -->
+    <div style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <label style="font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:5px">
+          <i class="ti ti-stars" style="font-size:13px;color:#4285F4"></i>Gemini API 키
+        </label>
+        <a href="https://aistudio.google.com/app/apikey" target="_blank" style="font-size:10px;color:var(--primary)">키 발급 →</a>
+      </div>
+      <div style="display:flex;gap:7px">
+        <input class="fi" id="key-gemini" type="password" placeholder="AIza..." style="flex:1;font-family:monospace;font-size:12px">
+        <button class="abtn" onclick="toggleKeyVis('key-gemini')" style="font-size:11px;flex-shrink:0"><i class="ti ti-eye"></i></button>
+      </div>
+    </div>
+
+    <!-- ChatGPT -->
+    <div style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <label style="font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:5px">
+          <i class="ti ti-message-circle" style="font-size:13px;color:#10A37F"></i>ChatGPT API 키
+        </label>
+        <a href="https://platform.openai.com/api-keys" target="_blank" style="font-size:10px;color:var(--primary)">키 발급 →</a>
+      </div>
+      <div style="display:flex;gap:7px">
+        <input class="fi" id="key-gpt" type="password" placeholder="sk-..." style="flex:1;font-family:monospace;font-size:12px">
+        <button class="abtn" onclick="toggleKeyVis('key-gpt')" style="font-size:11px;flex-shrink:0"><i class="ti ti-eye"></i></button>
+      </div>
+    </div>
+
+    <!-- Claude -->
+    <div style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <label style="font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:5px">
+          <i class="ti ti-robot" style="font-size:13px;color:#CC785C"></i>Claude API 키
+        </label>
+        <a href="https://console.anthropic.com/api-keys" target="_blank" style="font-size:10px;color:var(--primary)">키 발급 →</a>
+      </div>
+      <div style="display:flex;gap:7px">
+        <input class="fi" id="key-claude" type="password" placeholder="sk-ant-..." style="flex:1;font-family:monospace;font-size:12px">
+        <button class="abtn" onclick="toggleKeyVis('key-claude')" style="font-size:11px;flex-shrink:0"><i class="ti ti-eye"></i></button>
+      </div>
+    </div>
+
+    <div id="api-key-msg" class="smsg" style="margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="abtn p" onclick="saveApiKeys()" style="flex:1;justify-content:center;padding:9px">
+        <i class="ti ti-device-floppy"></i> 저장
+      </button>
+      <button class="abtn" onclick="closeApiKeyModal()" style="flex-shrink:0">취소</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
