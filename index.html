@@ -294,7 +294,7 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
       <div><div class="nc-name">수업 활동지 작성</div><div class="nc-desc">팀 활동 기록, 모델 분석 결과, 개인 성찰 소감문 제출</div></div>
       <i class="ti ti-chevron-right nc-arr"></i>
     </div>
-    <div class="nc" onclick="go('viewer')">
+    <div class="nc" onclick="goViewer()">
       <div class="ni r"><i class="ti ti-video"></i></div>
       <div><div class="nc-name">교사 화면 보기</div><div class="nc-desc">선생님 웹캠 화면을 실시간으로 시청 (WebRTC)</div></div>
       <i class="ti ti-chevron-right nc-arr"></i>
@@ -478,6 +478,10 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
         선생님이 칠판에 적어준 주소에서 숫자 부분만 입력하세요
       </div>
     </div>
+    <div id="viewer-https-warning" style="display:none;background:#FFFBEB;border:1px solid #FDE68A;border-radius:var(--rad);padding:12px;margin-bottom:12px;font-size:12px;color:#92400E;line-height:1.7">
+      <strong>⚠️ 안내:</strong> 실물화상기는 <strong>http://선생님IP:3000</strong> 주소로 접속할 때만 작동해요.<br>
+      선생님이 칠판에 적어준 주소로 다시 접속해 주세요.
+    </div>
     <div class="info-box">
       <strong>사용 방법</strong><br>
       위에 선생님 IP를 입력하고 저장하면 자동으로 연결됩니다.<br>
@@ -563,6 +567,13 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
   <div id="tab-broadcast" class="t-content">
     <div class="card">
       <div style="font-size:13px;font-weight:700;margin-bottom:10px"><i class="ti ti-video" style="color:var(--red);font-size:15px;vertical-align:-2px;margin-right:6px"></i>실물화상기 (WebRTC 실시간 방송)</div>
+      <div id="https-warning" style="display:none;background:#FFFBEB;border:1px solid #FDE68A;border-radius:var(--rad);padding:13px;margin-bottom:12px;font-size:12px;color:#92400E;line-height:1.7">
+        <strong>⚠️ 실물화상기 사용 안내</strong><br>
+        현재 <strong>https://</strong> 주소로 접속 중입니다. 실물화상기는 보안 정책상 HTTPS에서 작동하지 않아요.<br><br>
+        <strong>해결 방법:</strong> 수업 시간에 학생/교사 모두 아래 주소로 접속하세요.<br>
+        <code style="background:#FEF3C7;padding:2px 6px;border-radius:4px">http://선생님IP:3000</code>
+        (시작.bat 실행 후 검은 창에 표시되는 주소)
+      </div>
       <div class="info-box">
         <strong>사용 방법</strong><br>
         1. 아래에 선생님 컴퓨터 IP를 입력하고 저장하세요 (시작.bat 실행 시 검은 창에 표시).<br>
@@ -978,7 +989,27 @@ const AI_NOTES = {
 };
 const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' }
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun3.l.google.com:19302' },
+  { urls: 'stun:stun4.l.google.com:19302' },
+  { urls: 'stun:stun.stunprotocol.org:3478' },
+  { urls: 'stun:stun.voip.blackberry.com:3478' },
+  {
+    urls: 'turn:openrelay.metered.ca:80',
+    username: 'openrelayproject',
+    credential: 'openrelayproject'
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443',
+    username: 'openrelayproject',
+    credential: 'openrelayproject'
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+    username: 'openrelayproject',
+    credential: 'openrelayproject'
+  }
 ];
 
 let questions = [...DEF_QS], submissions = [], selectedAI = 'claude', rfFilter = 'all';
@@ -993,7 +1024,9 @@ const MY_ID = 'v_' + Math.random().toString(36).slice(2, 8);
 function getSavedServerIP() {
   return localStorage.getItem('server-ip') || location.hostname;
 }
-let WS_URL = `ws://${getSavedServerIP()}:3000`;
+// https 페이지에서는 ws:// 불가 → 로컬 서버 접속 시에만 WS 사용
+const IS_HTTPS = location.protocol === 'https:';
+let WS_URL = 'ws://' + getSavedServerIP() + ':3000';
 
 /* ══════════════════════════════════════════
    유틸
@@ -1028,7 +1061,11 @@ async function go(id) {
   }
   if (id === 'teacher')    { await renderTeacher(); }
   if (id === 'materials')   { loadMaterials(); }
-  if (id === 'viewer')     { connectViewer(); }
+  if (id === 'viewer') {
+    const vw = document.getElementById('viewer-https-warning');
+    if (vw) vw.style.display = IS_HTTPS ? 'block' : 'none';
+    if (!IS_HTTPS) connectViewer();
+  }
 }
 function teacherLogin() {
   const pw = document.getElementById('teacher-pw').value;
@@ -1053,6 +1090,10 @@ function switchTab(btn, id) {
     }, 100);
   }
   if (id === 'tab-materials-mgr') loadMaterialsMgr();
+  if (id === 'tab-broadcast') {
+    const w = document.getElementById('https-warning');
+    if (w) w.style.display = IS_HTTPS ? 'block' : 'none';
+  }
 }
 function selAI(ai, btn) {
   selectedAI = ai;
@@ -1065,7 +1106,13 @@ function selAI(ai, btn) {
    WebSocket 공통 연결
 ══════════════════════════════════════════ */
 function connectWS(onOpen) {
-  WS_URL = `ws://${getSavedServerIP()}:3000`;
+  WS_URL = 'ws://' + getSavedServerIP() + ':3000';
+  if (IS_HTTPS) {
+    // HTTPS에서는 ws:// 연결 불가 — 안내 메시지만 표시
+    const statusEl = document.getElementById('teacher-badge') || document.getElementById('viewer-status');
+    console.warn('HTTPS 환경에서는 실물화상기를 사용할 수 없습니다. http://교사IP:3000 으로 접속해 주세요.');
+    return;
+  }
   if (ws && ws.readyState === WebSocket.OPEN) { onOpen(); return; }
   ws = new WebSocket(WS_URL);
   ws.onopen = () => onOpen();
@@ -1122,7 +1169,7 @@ function handleBroadcasterMessage(e) {
 }
 
 async function createOfferFor(viewerId) {
-  const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+  const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS, iceCandidatePoolSize: 10 });
   peerConns[viewerId] = pc;
   localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
   pc.onicecandidate = e => {
@@ -1190,7 +1237,7 @@ async function handleViewerMessage(e) {
   }
   if (msg.type === 'offer') {
     if (viewerPc) viewerPc.close();
-    viewerPc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    viewerPc = new RTCPeerConnection({ iceServers: ICE_SERVERS, iceCandidatePoolSize: 10 });
     viewerPc.ontrack = e => {
       document.getElementById('viewer-video').srcObject = e.streams[0];
       setViewerStatus('connected', '연결됨 — WebRTC 실시간 스트리밍');
@@ -2014,7 +2061,12 @@ function dlSeteukExcel() {
 }
 
 /* 초기화 */
-(()=>{ initSupabase(); const r=lsGet('questions'); if(r)questions=r; setTimeout(()=>{loadSavedIP();loadSbInputs();}, 100); })();
+(()=>{
+  // URL 해시로 바로 이동 (#viewer, #worksheet 등)
+  if (location.hash === '#viewer') {
+    setTimeout(() => go('viewer'), 300);
+  }
+  initSupabase(); const r=lsGet('questions'); if(r)questions=r; setTimeout(()=>{loadSavedIP();loadSbInputs();}, 100); })();
 
 /* ══════════════════════════════════════════
    파일 다운로드 함수
@@ -2100,10 +2152,9 @@ function saveServerIP() {
   const ip = document.getElementById('server-ip-input').value.trim();
   if (!ip) return;
   localStorage.setItem('server-ip', ip);
-  WS_URL = `ws://${ip}:3000`;
+  WS_URL = 'ws://' + ip + ':3000';
   const msg = document.getElementById('ip-saved-msg');
-  msg.style.display = 'inline-flex';
-  setTimeout(() => msg.style.display = 'none', 2000);
+  if (msg) { msg.style.display = 'inline-flex'; setTimeout(() => msg.style.display = 'none', 2000); }
 }
 function saveServerIPViewer() {
   const ip = document.getElementById('viewer-ip-input').value.trim();
@@ -2486,6 +2537,22 @@ window.saveObs = async function(id1, m, msgEl) {
     if (msgEl) { msgEl.textContent='DB 미연결'; msgEl.style.display='inline'; }
   }
 };
+
+
+/* ── 교사 화면 보기 ── */
+function goViewer() {
+  const ip = localStorage.getItem('server-ip');
+  if (ip && ip.trim()) {
+    // 저장된 IP가 있으면 http://IP:3000 으로 새 탭 열기
+    const url = 'http://' + ip.trim() + ':3000';
+    // 새 탭에서 viewer 화면으로 바로 이동
+    window.open(url + '#viewer', '_blank');
+  } else {
+    // IP 없으면 IP 입력 안내 후 viewer 화면으로
+    const ok = confirm('선생님 컴퓨터 IP가 설정되어 있지 않습니다.\n\n교사용 관리 → 화면 방송 탭에서 IP를 먼저 저장해주세요.\n\n지금 바로 연결 화면으로 이동할까요?');
+    if (ok) go('viewer');
+  }
+}
 
 </script>
 
