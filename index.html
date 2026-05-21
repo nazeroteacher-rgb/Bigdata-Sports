@@ -1202,8 +1202,7 @@ function connectViewer() {
   setViewerStatus('waiting', '서버에 연결 중...');
 
   connectWS(() => {
-    ws.send(JSON.stringify({ type: 'set-viewer-id', viewerId: MY_ID }));
-    ws.send(JSON.stringify({ type: 'register-viewer' }));
+    ws.send(JSON.stringify({ type: 'register-viewer', viewerId: MY_ID }));
     ws.onmessage = handleViewerMessage;
   });
   ws.onerror = () => setViewerStatus('error', '서버 연결 실패. 선생님 컴퓨터의 서버가 실행 중인지 확인하세요.');
