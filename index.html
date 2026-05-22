@@ -286,7 +286,7 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
   <div class="card-grid">
     <div class="nc" onclick="go('materials')">
       <div class="ni g"><i class="ti ti-file-download"></i></div>
-      <div><div class="nc-name">수업 자료 다운로드</div><div class="nc-desc">차시별 학습 자료, 데이터 수집 가이드, 헥사보드 매뉴얼</div></div>
+      <div><div class="nc-name">수업 자료</div><div class="nc-desc">차시별 학습 자료, 데이터 수집 가이드, 헥사보드 매뉴얼</div></div>
       <i class="ti ti-chevron-right nc-arr"></i>
     </div>
     <div class="nc" onclick="go('worksheet')">
@@ -311,7 +311,7 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
 <div id="materials" class="screen">
   <div class="topbar">
     <button class="back-btn" onclick="go('home')"><i class="ti ti-arrow-left"></i> 홈</button>
-    <div><div class="tb-title">수업 자료 다운로드</div></div>
+    <div><div class="tb-title">수업 자료</div></div>
     <div class="tb-actions">
       <button class="abtn" onclick="loadMaterials()"><i class="ti ti-refresh"></i> 새로고침</button>
     </div>
@@ -319,6 +319,40 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
   <div class="content">
     <div id="mat-list">
       <div class="empty-st"><div class="empty-icon">📂</div><p>자료를 불러오는 중...</p></div>
+    </div>
+
+    <!-- 이지블록스 바로가기 -->
+    <div style="margin-top:16px">
+      <a href="https://easyblocks.kr/" target="_blank"
+        style="display:flex;align-items:center;gap:14px;background:var(--card);border:1.5px solid var(--primary);border-radius:var(--rad-lg);padding:16px 18px;text-decoration:none;box-shadow:var(--shadow);transition:all .18s"
+        onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,102,255,0.15)'"
+        onmouseout="this.style.transform='';this.style.boxShadow='var(--shadow)'">
+        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#0066FF,#0047CC);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-blocks" style="font-size:22px;color:#fff"></i>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px">이지블록스 바로가기</div>
+          <div style="font-size:12px;color:var(--text3)">easyblocks.kr — 블록 코딩 플랫폼 새 창으로 열기</div>
+        </div>
+        <i class="ti ti-external-link" style="font-size:18px;color:var(--primary);flex-shrink:0"></i>
+      </a>
+    </div>
+
+    <!-- 티처블 머신 바로가기 -->
+    <div style="margin-top:10px">
+      <a href="https://teachablemachine.withgoogle.com/" target="_blank"
+        style="display:flex;align-items:center;gap:14px;background:var(--card);border:1.5px solid #00C49A;border-radius:var(--rad-lg);padding:16px 18px;text-decoration:none;box-shadow:var(--shadow);transition:all .18s"
+        onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,196,154,0.15)'"
+        onmouseout="this.style.transform='';this.style.boxShadow='var(--shadow)'">
+        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#00C49A,#00957A);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-robot" style="font-size:22px;color:#fff"></i>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px">티처블 머신 바로가기</div>
+          <div style="font-size:12px;color:var(--text3)">teachablemachine.withgoogle.com — AI 모델 학습 플랫폼</div>
+        </div>
+        <i class="ti ti-external-link" style="font-size:18px;color:#00C49A;flex-shrink:0"></i>
+      </a>
     </div>
   </div>
 </div>
