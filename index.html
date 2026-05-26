@@ -538,7 +538,7 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
       <input class="fi" id="teacher-pw" type="password" placeholder="비밀번호" style="text-align:center;letter-spacing:.12em;margin-bottom:10px" onkeydown="if(event.key==='Enter')teacherLogin()">
       <button class="abtn p" style="width:100%;justify-content:center;padding:9px" onclick="teacherLogin()">입장하기</button>
       <div style="font-size:11px;color:var(--red);margin-top:8px;display:none" id="login-err">비밀번호가 올바르지 않습니다</div>
-      <div style="font-size:11px;color:var(--text2);margin-top:12px">기본 비밀번호: 1234</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:12px">기본 비밀번호: 내선번호</div>
     </div>
   </div>
 </div>
@@ -993,7 +993,7 @@ window.onerror = function(msg, src, line, col, err) {
 /* ══════════════════════════════════════════
    전역 상태
 ══════════════════════════════════════════ */
-const TEACHER_PW = '1234';
+const TEACHER_PW = '0391';
 
 /* ── Supabase 설정 ── */
 // ★ 아래 두 값을 Supabase 대시보드에서 복사해서 붙여넣으세요
@@ -1518,7 +1518,7 @@ function showTeamDetail() {
     const block = document.createElement('div');
     block.className = 'ans-block';
     block.innerHTML = '<div class="ans-q">Q' + (i+1) + '. ' + q + '</div>'
-      + '<div class="ans-a">' + (ans[i] || '<span style="color:var(--text3)">미작성</span>') + '</div>';
+      + '<div class="ans-a">' + renderAnsValue(ans[i], i) + '</div>';
     card.appendChild(block);
   });
 
@@ -1809,12 +1809,53 @@ async function genSeteuk(tid, m, btn) {
 /* ══════════════════════════════════════════
    활동지 / 질문
 ══════════════════════════════════════════ */
-function renderWSQs(){document.getElementById('ws-questions').innerHTML=questions.map((q,i)=>`<div class="card"><div class="qt"><span class="qn">${i+1}</span><span>${q}</span></div><textarea class="fta" id="ws-q${i}" placeholder="여기에 답변을 작성하세요..."></textarea></div>`).join('');}
-function renderQEditor(){document.getElementById('q-ed-list').innerHTML=questions.map((q,i)=>`<div class="qe-item"><div class="qe-num">Q${i+1}</div><input class="qe-in" value="${q.replace(/"/g,'&quot;')}" id="qe-${i}"><button class="qe-del" onclick="delQ(${i})" aria-label="삭제"><i class="ti ti-trash"></i></button></div>`).join('');}
+function renderWSQs() {
+  document.getElementById('ws-questions').innerHTML = questions.map((q, i) => {
+    const text = typeof q === 'object' ? q.text : q;
+    const type = typeof q === 'object' ? (q.type||'text') : 'text';
+    if (type === 'photo') {
+      return '<div class="card">'
+        + '<div class="qt"><span class="qn">' + (i+1) + '</span><span>' + text + '</span></div>'
+        + '<div style="margin-top:6px">'
+        + '<input type="file" accept="image/*" id="ws-q'+i+'" capture="environment"'
+        + ' style="display:none" onchange="previewPhoto('+i+',this)">'
+        + '<div id="ws-q'+i+'-preview" style="margin-bottom:8px"></div>'
+        + '<label for="ws-q'+i+'" class="abtn p" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px">'
+        + '<i class="ti ti-camera"></i> 사진 첨부하기</label>'
+        + '<div style="font-size:11px;color:var(--text3);margin-top:6px">결과물 사진을 찍어 첨부해주세요</div>'
+        + '</div></div>';
+    }
+    return '<div class="card"><div class="qt"><span class="qn">' + (i+1) + '</span><span>' + text + '</span></div>'
+      + '<textarea class="fta" id="ws-q'+i+'" placeholder="여기에 답변을 작성하세요..."></textarea></div>';
+  }).join('');
+}
+function renderQEditor() {
+  const list = document.getElementById('q-ed-list');
+  list.innerHTML = questions.map((q, i) => {
+    const text = typeof q === 'object' ? q.text : q;
+    const type = typeof q === 'object' ? (q.type||'text') : 'text';
+    return '<div class="qe-item">'
+      + '<div class="qe-num">Q'+(i+1)+'</div>'
+      + '<div style="flex:1;display:flex;flex-direction:column;gap:5px">'
+      + '<input class="qe-in" value="' + text.replace(/"/g,'&quot;') + '" id="qe-'+i+'" placeholder="질문 내용">'
+      + '<select class="qe-type" id="qt-'+i+'" style="padding:4px 8px;border:1px solid var(--border-strong);border-radius:var(--rad);font-size:11px;font-family:inherit;background:var(--card);color:var(--text2)">'
+      + '<option value="text"' + (type==='text'?' selected':'') + '>📝 텍스트 답변</option>'
+      + '<option value="photo"' + (type==='photo'?' selected':'') + '>📷 사진 첨부</option>'
+      + '</select>'
+      + '</div>'
+      + '<button class="qe-del" onclick="delQ('+i+')" aria-label="삭제"><i class="ti ti-trash"></i></button>'
+      + '</div>';
+  }).join('');
+}
 function addQ(){questions.push('새 질문을 입력하세요');renderQEditor();}
 function delQ(i){if(questions.length<=1){alert('최소 1개 이상이어야 합니다.');return;}questions.splice(i,1);renderQEditor();}
 async function saveQs(){
-  questions=Array.from(document.querySelectorAll('[id^="qe-"]')).map(el=>el.value.trim()).filter(v=>v);
+  questions = Array.from(document.querySelectorAll('[id^="qe-"]')).map((el, i) => {
+    const text = el.value.trim();
+    const typeEl = document.getElementById('qt-'+i);
+    const type = typeEl ? typeEl.value : 'text';
+    return type === 'photo' ? { text, type:'photo' } : text;
+  }).filter(v => typeof v === 'object' ? v.text : v);
   lsSet('questions',questions);
   if(sb){
     await sb.from('settings').upsert({key:'questions',value:JSON.stringify(questions)},{onConflict:'key'});
@@ -2606,6 +2647,51 @@ function goViewer() {
     const ok = confirm('선생님 컴퓨터 IP가 설정되어 있지 않습니다.\n\n교사용 관리 → 화면 방송 탭에서 IP를 먼저 저장해주세요.\n\n지금 바로 연결 화면으로 이동할까요?');
     if (ok) go('viewer');
   }
+}
+
+
+/* ── 사진 미리보기 ── */
+function previewPhoto(idx, input) {
+  const preview = document.getElementById('ws-q'+idx+'-preview');
+  if (!preview || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    preview.innerHTML = '<img src="'+e.target.result+'" style="max-width:100%;max-height:200px;border-radius:var(--rad);border:1px solid var(--border);object-fit:contain">'
+      + '<div style="font-size:11px;color:var(--accent);margin-top:4px"><i class="ti ti-check" style="font-size:11px"></i> 사진이 선택됐습니다</div>';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+/* ── 사진 업로드 to Supabase Storage ── */
+async function uploadPhotoAnswer(idx, teamId) {
+  const input = document.getElementById('ws-q'+idx);
+  if (!input || !input.files || !input.files[0]) return null;
+  const file = input.files[0];
+  const ext = file.name.split('.').pop() || 'jpg';
+  const path = 'answers/' + teamId + '_q' + idx + '_' + Date.now() + '.' + ext;
+  try {
+    const { error } = await sb.storage.from('materials').upload(path, file, { upsert: true });
+    if (error) throw error;
+    const { data } = sb.storage.from('materials').getPublicUrl(path);
+    return data.publicUrl;
+  } catch(e) {
+    console.error('사진 업로드 실패:', e);
+    return null;
+  }
+}
+
+
+/* ── 답변 렌더링 헬퍼 (사진 URL 판별) ── */
+function renderAnsValue(val, qIdx) {
+  if (!val) return '<span style="color:var(--text3)">미작성</span>';
+  const q = questions[qIdx];
+  const type = typeof q === 'object' ? (q.type||'text') : 'text';
+  if (type === 'photo' && val.startsWith('http')) {
+    return '<a href="'+val+'" target="_blank">'
+      + '<img src="'+val+'" style="max-width:100%;max-height:160px;border-radius:var(--rad);border:1px solid var(--border);object-fit:contain;display:block">'
+      + '</a><div style="font-size:10px;color:var(--text3);margin-top:3px"><i class="ti ti-photo" style="font-size:11px"></i> 사진 답변</div>';
+  }
+  return val;
 }
 
 </script>
