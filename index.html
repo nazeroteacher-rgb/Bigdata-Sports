@@ -2851,9 +2851,11 @@ function parseRows(rows) {
   if (!students.length) { msg.className='smsg err'; msg.textContent='학번/이름 데이터를 찾을 수 없습니다. 첫 열: 학번, 둘째 열: 이름 형식인지 확인하세요.'; return; }
 
   rosterStudents = students;
-  msg.className = 'smsg ok'; msg.textContent = '✓ ' + students.length + '명 파싱 완료!';
+  msg.className = 'smsg ok'; msg.textContent = '✓ ' + students.length + '명 파싱 완료! 자동 저장 중...';
   renderRoster();
   updateTeamPreview();
+  // 자동으로 Supabase에 저장
+  autoSaveRoster(msg);
 }
 
 function renderRoster() {
@@ -2876,6 +2878,7 @@ function removeStudent(idx) {
   rosterStudents.splice(idx, 1);
   renderRoster();
   updateTeamPreview();
+  autoSaveRoster(null);
 }
 
 function clearRoster() {
@@ -3084,6 +3087,17 @@ function dlTeamExcel() {
   ws['!cols'] = [{wch:8},{wch:12},{wch:12}];
   XLSX.utils.book_append_sheet(wb, ws, '팀구성');
   XLSX.writeFile(wb, '팀구성_' + new Date().toLocaleDateString('ko-KR').split('.').join('-').replace(/ /g,'') + '.xlsx');
+}
+
+
+async function autoSaveRoster(msgEl) {
+  if (!sb) return;
+  try {
+    await sb.from('settings').upsert({ key:'roster', value: JSON.stringify(rosterStudents) }, { onConflict:'key' });
+    if (msgEl) msgEl.textContent = '✓ ' + rosterStudents.length + '명 파싱 완료! (자동 저장됨)';
+  } catch(e) {
+    if (msgEl) msgEl.textContent = '✓ ' + rosterStudents.length + '명 파싱 완료! (저장 실패: ' + e.message + ')';
+  }
 }
 
 </script>
