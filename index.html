@@ -270,7 +270,7 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
 <body>
 
 <!-- LOADING -->
-<div id="loading-overlay" style="display:none!important"><div class="spinner"></div><p id="loading-text">로딩 중....</p></div>
+<div id="loading-overlay" style="display:none!important"><div class="spinner"></div><p id="loading-text">로딩 중...</p></div>
 
 <!-- HOME -->
 <div id="home" class="screen active">
@@ -538,7 +538,7 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
       <input class="fi" id="teacher-pw" type="password" placeholder="비밀번호" style="text-align:center;letter-spacing:.12em;margin-bottom:10px" onkeydown="if(event.key==='Enter')teacherLogin()">
       <button class="abtn p" style="width:100%;justify-content:center;padding:9px" onclick="teacherLogin()">입장하기</button>
       <div style="font-size:11px;color:var(--red);margin-top:8px;display:none" id="login-err">비밀번호가 올바르지 않습니다</div>
-      <div style="font-size:11px;color:var(--text2);margin-top:12px">기본 비밀번호: 내선번호</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:12px">기본 비밀번호: 1234</div>
     </div>
   </div>
 </div>
@@ -562,6 +562,7 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
     <button class="t-tab" onclick="switchTab(this,'tab-qmgmt')">질문 관리</button>
     <button class="t-tab" onclick="switchTab(this,'tab-install')"><i class="ti ti-download" style="font-size:13px;vertical-align:-2px"></i> 설치 안내</button>
     <button class="t-tab" onclick="switchTab(this,'tab-materials-mgr')"><i class="ti ti-folder-up" style="font-size:13px;vertical-align:-2px"></i> 수업 자료 관리</button>
+    <button class="t-tab" onclick="switchTab(this,'tab-roster')"><i class="ti ti-users-group" style="font-size:13px;vertical-align:-2px"></i> 출석부·팀 구성</button>
   </div>
 
   <!-- 자료 관리 탭 -->
@@ -596,6 +597,89 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
       </div>
     </div>
   </div>
+
+  <!-- 출석부·팀 구성 탭 -->
+  <div id="tab-roster" class="t-content hidden">
+
+    <!-- 학생 명단 업로드 -->
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:7px">
+        <i class="ti ti-table-import" style="font-size:15px;color:var(--primary)"></i>학생 명단 업로드
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.7">
+        CSV 또는 엑셀 파일을 업로드하세요.<br>
+        첫 번째 열: <strong style="color:var(--text)">학번</strong> &nbsp;|&nbsp; 두 번째 열: <strong style="color:var(--text)">이름</strong> (첫 행은 헤더 또는 데이터)
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="file" id="roster-file" accept=".csv,.xlsx,.xls" style="display:none" onchange="parseRosterFile(this)">
+        <label for="roster-file" class="abtn p" style="cursor:pointer;font-size:12px">
+          <i class="ti ti-upload"></i> 파일 선택 (CSV / 엑셀)
+        </label>
+        <button class="abtn" onclick="clearRoster()" style="font-size:12px;color:var(--sport);border-color:var(--sport)">
+          <i class="ti ti-trash"></i> 초기화
+        </button>
+        <span id="roster-file-name" style="font-size:12px;color:var(--text3)">선택된 파일 없음</span>
+      </div>
+      <div id="roster-parse-msg" class="smsg" style="margin-top:8px"></div>
+    </div>
+
+    <!-- 학생 명단 미리보기 -->
+    <div id="roster-preview-card" class="card" style="margin-bottom:12px;display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px">
+          <i class="ti ti-list" style="font-size:15px;color:var(--accent)"></i>
+          학생 명단 <span id="roster-count" style="font-size:12px;font-weight:400;color:var(--text3)"></span>
+        </div>
+        <button class="abtn" onclick="saveRosterToDb()" style="font-size:12px;border-color:var(--accent);color:var(--accent)">
+          <i class="ti ti-device-floppy"></i> 명단 저장
+        </button>
+      </div>
+      <div id="roster-list" style="max-height:200px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px"></div>
+    </div>
+
+    <!-- 팀 생성 설정 -->
+    <div id="team-gen-card" class="card" style="margin-bottom:12px;display:none">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:7px">
+        <i class="ti ti-shuffle" style="font-size:15px;color:var(--data)"></i>랜덤 팀 생성
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+        <div class="fg" style="flex-shrink:0">
+          <label class="fl">팀 구성 방식</label>
+          <select id="team-mode" class="fi" style="font-size:12px;max-width:150px" onchange="updateTeamPreview()">
+            <option value="size">팀당 인원 수</option>
+            <option value="count">총 팀 수</option>
+          </select>
+        </div>
+        <div class="fg" style="flex-shrink:0">
+          <label class="fl" id="team-num-label">팀당 인원 수</label>
+          <input class="fi" id="team-num" type="number" value="2" min="1" max="10" style="width:80px;font-size:13px" oninput="updateTeamPreview()">
+        </div>
+        <div style="font-size:12px;color:var(--text3)" id="team-preview-info"></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="abtn p" onclick="generateTeams()" style="font-size:12px">
+          <i class="ti ti-shuffle"></i> 랜덤 팀 생성
+        </button>
+        <button class="abtn" onclick="saveTeamToDb()" style="font-size:12px;border-color:var(--accent);color:var(--accent)">
+          <i class="ti ti-device-floppy"></i> 팀 저장
+        </button>
+        <button class="excel-btn" onclick="dlTeamExcel()" style="font-size:12px">
+          <i class="ti ti-file-spreadsheet"></i> 팀 엑셀 다운로드
+        </button>
+      </div>
+    </div>
+
+    <!-- 팀 결과 -->
+    <div id="team-result-card" class="card" style="display:none">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:7px">
+        <i class="ti ti-users" style="font-size:15px;color:var(--primary)"></i>팀 구성 결과
+        <span style="font-size:11px;color:var(--text3);font-weight:400">팀원을 다른 팀으로 이동하려면 이름 옆 화살표 버튼을 누르세요</span>
+      </div>
+      <div id="team-result-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px"></div>
+    </div>
+
+  </div>
+
 
   <!-- 화면 방송 -->
   <div id="tab-broadcast" class="t-content">
@@ -993,7 +1077,7 @@ window.onerror = function(msg, src, line, col, err) {
 /* ══════════════════════════════════════════
    전역 상태
 ══════════════════════════════════════════ */
-const TEACHER_PW = '0391';
+const TEACHER_PW = '1234';
 
 /* ── Supabase 설정 ── */
 // ★ 아래 두 값을 Supabase 대시보드에서 복사해서 붙여넣으세요
@@ -2692,6 +2776,243 @@ function renderAnsValue(val, qIdx) {
       + '</a><div style="font-size:10px;color:var(--text3);margin-top:3px"><i class="ti ti-photo" style="font-size:11px"></i> 사진 답변</div>';
   }
   return val;
+}
+
+
+/* ══════════════════════════════════════════
+   출석부 · 팀 구성
+══════════════════════════════════════════ */
+let rosterStudents = [];  // [{id:'1101', name:'홍길동'}, ...]
+let teams = [];           // [[{id,name}, ...], ...]
+
+/* ── CSV/엑셀 파싱 ── */
+async function parseRosterFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('roster-file-name').textContent = file.name;
+  const msg = document.getElementById('roster-parse-msg');
+  msg.style.display = 'none';
+
+  const ext = file.name.split('.').pop().toLowerCase();
+
+  try {
+    if (ext === 'csv') {
+      const text = await file.text();
+      parseCSV(text);
+    } else if (ext === 'xlsx' || ext === 'xls') {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+      parseRows(rows);
+    }
+  } catch(e) {
+    msg.className = 'smsg err'; msg.textContent = '파일 파싱 실패: ' + e.message;
+  }
+}
+
+function parseCSV(text) {
+  const CR = String.fromCharCode(13);
+  const LF = String.fromCharCode(10);
+  const clean = text.split(CR).join('');
+  const lines = clean.split(LF).filter(function(l){ return l.trim(); });
+  const rows = lines.map(function(l){
+    return l.split(',').map(function(c){ return c.trim().replace(/^"|"$/g,''); });
+  });
+  parseRows(rows);
+}
+
+function parseRows(rows) {
+  const msg = document.getElementById('roster-parse-msg');
+  if (!rows || rows.length < 1) { msg.className='smsg err'; msg.textContent='데이터가 없습니다.'; return; }
+
+  // 첫 행이 헤더인지 확인 (숫자가 아니면 헤더로 간주)
+  let startIdx = 0;
+  const firstCell = String(rows[0][0] || '');
+  const hasAlpha = (firstCell.charCodeAt(0) >= 65 && firstCell.charCodeAt(0) <= 122) || firstCell.charCodeAt(0) >= 0xAC00;
+  if (isNaN(firstCell.replace(/[0-9]/g,'').trim()) || firstCell.length === 0 || hasAlpha) {
+    startIdx = 1;
+  }
+
+  const students = [];
+  for (let i = startIdx; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.length < 2) continue;
+    const id = String(row[0]||'').trim();
+    const name = String(row[1]||'').trim();
+    if (id && name) students.push({ id, name });
+  }
+
+  if (!students.length) { msg.className='smsg err'; msg.textContent='학번/이름 데이터를 찾을 수 없습니다. 첫 열: 학번, 둘째 열: 이름 형식인지 확인하세요.'; return; }
+
+  rosterStudents = students;
+  msg.className = 'smsg ok'; msg.textContent = '✓ ' + students.length + '명 파싱 완료!';
+  renderRoster();
+  updateTeamPreview();
+}
+
+function renderRoster() {
+  const card = document.getElementById('roster-preview-card');
+  const list = document.getElementById('roster-list');
+  const count = document.getElementById('roster-count');
+  card.style.display = '';
+  document.getElementById('team-gen-card').style.display = '';
+  count.textContent = '(' + rosterStudents.length + '명)';
+  list.innerHTML = rosterStudents.map((s, i) =>
+    '<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg);border-radius:var(--rad);font-size:12px">'
+    + '<span style="font-weight:600;color:var(--text3);font-size:10px;min-width:36px">' + s.id + '</span>'
+    + '<span style="color:var(--text);font-weight:500">' + s.name + '</span>'
+    + '<button onclick="removeStudent('+i+')" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:0 2px" title="삭제">×</button>'
+    + '</div>'
+  ).join('');
+}
+
+function removeStudent(idx) {
+  rosterStudents.splice(idx, 1);
+  renderRoster();
+  updateTeamPreview();
+}
+
+function clearRoster() {
+  if (!confirm('명단을 초기화할까요?')) return;
+  rosterStudents = []; teams = [];
+  document.getElementById('roster-preview-card').style.display = 'none';
+  document.getElementById('team-gen-card').style.display = 'none';
+  document.getElementById('team-result-card').style.display = 'none';
+  document.getElementById('roster-file-name').textContent = '선택된 파일 없음';
+  document.getElementById('roster-file').value = '';
+  document.getElementById('roster-parse-msg').style.display = 'none';
+}
+
+function updateTeamPreview() {
+  const mode = document.getElementById('team-mode') && document.getElementById('team-mode').value;
+  const num = parseInt((document.getElementById('team-num') || {}).value) || 2;
+  const label = document.getElementById('team-num-label');
+  const info = document.getElementById('team-preview-info');
+  if (!label || !info) return;
+  if (mode === 'count') {
+    label.textContent = '총 팀 수';
+    const size = Math.ceil(rosterStudents.length / num);
+    info.textContent = rosterStudents.length + '명 → ' + num + '팀 (팀당 약 ' + size + '명)';
+  } else {
+    label.textContent = '팀당 인원 수';
+    const cnt = Math.ceil(rosterStudents.length / num);
+    info.textContent = rosterStudents.length + '명 → 약 ' + cnt + '팀 (팀당 ' + num + '명)';
+  }
+}
+
+/* ── 랜덤 팀 생성 ── */
+function generateTeams() {
+  if (!rosterStudents.length) { alert('학생 명단을 먼저 업로드해주세요.'); return; }
+  const mode = document.getElementById('team-mode').value;
+  const num = parseInt(document.getElementById('team-num').value) || 2;
+
+  // 셔플
+  const shuffled = [...rosterStudents].sort(() => Math.random() - 0.5);
+
+  let teamSize, teamCount;
+  if (mode === 'count') {
+    teamCount = num;
+    teamSize = Math.ceil(shuffled.length / teamCount);
+  } else {
+    teamSize = num;
+    teamCount = Math.ceil(shuffled.length / teamSize);
+  }
+
+  teams = [];
+  for (let i = 0; i < teamCount; i++) {
+    const team = shuffled.slice(i * teamSize, (i+1) * teamSize);
+    if (team.length) teams.push(team);
+  }
+
+  renderTeams();
+}
+
+function renderTeams() {
+  const card = document.getElementById('team-result-card');
+  const list = document.getElementById('team-result-list');
+  card.style.display = '';
+
+  list.innerHTML = teams.map((team, ti) =>
+    '<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--rad-lg);padding:12px">'
+    + '<div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:8px;display:flex;align-items:center;gap:6px">'
+    + '<span style="width:22px;height:22px;border-radius:50%;background:var(--primary);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px">' + (ti+1) + '</span>'
+    + '팀 ' + (ti+1) + ' <span style="font-weight:400;color:var(--text3);font-size:11px">(' + team.length + '명)</span>'
+    + '</div>'
+    + team.map((s, si) =>
+      '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">'
+      + '<span style="color:var(--text3);font-size:10px;min-width:36px">' + s.id + '</span>'
+      + '<span style="font-weight:500;flex:1">' + s.name + '</span>'
+      + '<div style="display:flex;gap:3px">'
+      + (ti > 0 ? '<button onclick="moveStudent('+ti+','+si+',-1)" style="background:none;border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:10px;padding:2px 5px;color:var(--text3)" title="이전 팀으로">◀</button>' : '<span style="width:28px"></span>')
+      + (ti < teams.length-1 ? '<button onclick="moveStudent('+ti+','+si+',1)" style="background:none;border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:10px;padding:2px 5px;color:var(--text3)" title="다음 팀으로">▶</button>' : '<span style="width:28px"></span>')
+      + '</div>'
+      + '</div>'
+    ).join('')
+    + '</div>'
+  ).join('');
+}
+
+/* ── 팀원 이동 ── */
+function moveStudent(fromTeam, studentIdx, direction) {
+  const student = teams[fromTeam][studentIdx];
+  const toTeam = fromTeam + direction;
+  if (toTeam < 0 || toTeam >= teams.length) return;
+  teams[fromTeam].splice(studentIdx, 1);
+  teams[toTeam].push(student);
+  if (!teams[fromTeam].length) teams.splice(fromTeam, 1);
+  renderTeams();
+}
+
+/* ── Supabase 저장/로드 ── */
+async function saveRosterToDb() {
+  if (!sb) { alert('DB가 연결되지 않았습니다.'); return; }
+  try {
+    await sb.from('settings').upsert({ key:'roster', value: JSON.stringify(rosterStudents) }, { onConflict:'key' });
+    const msg = document.getElementById('roster-parse-msg');
+    msg.className = 'smsg ok'; msg.textContent = '✓ 명단이 저장됐습니다!';
+  } catch(e) { alert('저장 실패: ' + e.message); }
+}
+
+async function saveTeamToDb() {
+  if (!sb) { alert('DB가 연결되지 않았습니다.'); return; }
+  if (!teams.length) { alert('팀을 먼저 생성해주세요.'); return; }
+  try {
+    await sb.from('settings').upsert({ key:'teams', value: JSON.stringify(teams) }, { onConflict:'key' });
+    alert('✓ 팀 구성이 저장됐습니다!');
+  } catch(e) { alert('저장 실패: ' + e.message); }
+}
+
+async function loadRosterFromDb() {
+  if (!sb) return;
+  try {
+    const { data: rd } = await sb.from('settings').select('value').eq('key','roster').maybeSingle();
+    if (rd && rd.value) {
+      rosterStudents = JSON.parse(rd.value);
+      renderRoster();
+      updateTeamPreview();
+    }
+    const { data: td } = await sb.from('settings').select('value').eq('key','teams').maybeSingle();
+    if (td && td.value) {
+      teams = JSON.parse(td.value);
+      renderTeams();
+    }
+  } catch(e) { console.error('명단 로드 실패:', e); }
+}
+
+/* ── 팀 엑셀 다운로드 ── */
+function dlTeamExcel() {
+  if (!teams.length) { alert('팀을 먼저 생성해주세요.'); return; }
+  const rows = [['팀', '학번', '이름']];
+  teams.forEach((team, ti) => {
+    team.forEach(s => rows.push(['팀' + (ti+1), s.id, s.name]));
+    rows.push(['','','']);
+  });
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:8},{wch:12},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, ws, '팀구성');
+  XLSX.writeFile(wb, '팀구성_' + new Date().toLocaleDateString('ko-KR').split('.').join('-').replace(/ /g,'') + '.xlsx');
 }
 
 </script>
