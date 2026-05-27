@@ -635,9 +635,12 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
           <i class="ti ti-list" style="font-size:15px;color:var(--accent)"></i>
           학생 명단 <span id="roster-count" style="font-size:12px;font-weight:400;color:var(--text3)"></span>
         </div>
-        <button class="abtn" onclick="saveRosterToDb()" style="font-size:12px;border-color:var(--accent);color:var(--accent)">
-          <i class="ti ti-device-floppy"></i> 명단 저장
-        </button>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span id="roster-save-status" style="font-size:11px;display:none"></span>
+          <button class="abtn" onclick="saveRosterToDb()" style="font-size:12px;border-color:var(--accent);color:var(--accent)">
+            <i class="ti ti-device-floppy"></i> 다시 저장
+          </button>
+        </div>
       </div>
       <div id="roster-list" style="max-height:200px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px"></div>
     </div>
@@ -2252,7 +2255,16 @@ function dlSeteukExcel() {
   } else if (location.hash === '#viewer') {
     setTimeout(() => go('viewer'), 300);
   }
-  initSupabase(); const r=lsGet('questions'); if(r)questions=r; setTimeout(()=>{loadSavedIP();loadSbInputs();}, 100); })();
+  const ok = initSupabase();
+  const r = lsGet('questions'); if(r) questions = r;
+  setTimeout(()=>{
+    loadSavedIP();
+    loadSbInputs();
+    // Supabase 연결 후 명단 불러오기
+    if (ok && sb) {
+      loadRosterFromDb();
+    }
+  }, 300); })();
 
 /* ══════════════════════════════════════════
    파일 다운로드 함수
@@ -3040,12 +3052,7 @@ function moveStudent(fromTeam, studentIdx, direction) {
 
 /* ── Supabase 저장/로드 ── */
 async function saveRosterToDb() {
-  if (!sb) { alert('DB가 연결되지 않았습니다.'); return; }
-  try {
-    await sb.from('settings').upsert({ key:'roster', value: JSON.stringify(rosterStudents) }, { onConflict:'key' });
-    const msg = document.getElementById('roster-parse-msg');
-    msg.className = 'smsg ok'; msg.textContent = '✓ 명단이 저장됐습니다!';
-  } catch(e) { alert('저장 실패: ' + e.message); }
+  await autoSaveRoster(null);
 }
 
 async function saveTeamToDb() {
@@ -3058,18 +3065,32 @@ async function saveTeamToDb() {
 }
 
 async function loadRosterFromDb() {
-  if (!sb) return;
+  if (!sb) { console.warn('loadRosterFromDb: sb 없음'); return; }
   try {
-    const { data: rd } = await sb.from('settings').select('value').eq('key','roster').maybeSingle();
+    const { data: rd, error: re } = await sb.from('settings').select('value').eq('key','roster').maybeSingle();
+    if (re) throw re;
     if (rd && rd.value) {
-      rosterStudents = JSON.parse(rd.value);
-      renderRoster();
-      updateTeamPreview();
+      const parsed = JSON.parse(rd.value);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        rosterStudents = parsed;
+        renderRoster();
+        updateTeamPreview();
+        // 저장 상태 표시
+        const statusEl = document.getElementById('roster-save-status');
+        if (statusEl) {
+          statusEl.textContent = '✓ 저장된 명단 불러옴 (' + rosterStudents.length + '명)';
+          statusEl.style.color = '#27500A';
+          statusEl.style.display = 'inline';
+        }
+      }
     }
-    const { data: td } = await sb.from('settings').select('value').eq('key','teams').maybeSingle();
-    if (td && td.value) {
-      teams = JSON.parse(td.value);
-      renderTeams();
+    const { data: td, error: te } = await sb.from('settings').select('value').eq('key','teams').maybeSingle();
+    if (!te && td && td.value) {
+      const parsedTeams = JSON.parse(td.value);
+      if (Array.isArray(parsedTeams) && parsedTeams.length > 0) {
+        teams = parsedTeams;
+        renderTeams();
+      }
     }
   } catch(e) { console.error('명단 로드 실패:', e); }
 }
@@ -3091,15 +3112,37 @@ function dlTeamExcel() {
 
 
 async function autoSaveRoster(msgEl) {
-  if (!sb) return;
-  try {
-    await sb.from('settings').upsert({ key:'roster', value: JSON.stringify(rosterStudents) }, { onConflict:'key' });
-    if (msgEl) msgEl.textContent = '✓ ' + rosterStudents.length + '명 파싱 완료! (자동 저장됨)';
-  } catch(e) {
-    if (msgEl) msgEl.textContent = '✓ ' + rosterStudents.length + '명 파싱 완료! (저장 실패: ' + e.message + ')';
+  const saveStatusEl = document.getElementById('roster-save-status');
+  if (saveStatusEl) {
+    saveStatusEl.textContent = '저장 중...';
+    saveStatusEl.style.color = 'var(--text3)';
+    saveStatusEl.style.display = 'inline';
   }
-}
+  if (!sb) {
+    if (saveStatusEl) { saveStatusEl.textContent = 'DB 미연결 — 저장 안 됨'; saveStatusEl.style.color = 'var(--sport)'; }
+    return;
+  }
+  try {
+    const val = JSON.stringify(rosterStudents);
+    const { error } = await sb.from('settings').upsert({ key: 'roster', value: val }, { onConflict: 'key' });
+    if (error) throw error;
+    const now = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    if (saveStatusEl) {
+      saveStatusEl.textContent = '✓ Supabase 저장 완료 (' + now + ')';
+      saveStatusEl.style.color = '#27500A';
+    }
+    if (msgEl) msgEl.textContent = '✓ ' + rosterStudents.length + '명 파싱 완료! Supabase 저장 완료';
+  } catch(e) {
+    if (saveStatusEl) {
+      saveStatusEl.textContent = '✗ 저장 실패: ' + e.message;
+      saveStatusEl.style.color = 'var(--sport)';
+    }
+    if (msgEl) msgEl.textContent = '파싱 완료, 저장 실패: ' + e.message;
+  }
 
+
+
+}
 </script>
 
 <!-- API 키 설정 모달 -->
