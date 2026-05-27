@@ -538,7 +538,7 @@ pre{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad)
       <input class="fi" id="teacher-pw" type="password" placeholder="비밀번호" style="text-align:center;letter-spacing:.12em;margin-bottom:10px" onkeydown="if(event.key==='Enter')teacherLogin()">
       <button class="abtn p" style="width:100%;justify-content:center;padding:9px" onclick="teacherLogin()">입장하기</button>
       <div style="font-size:11px;color:var(--red);margin-top:8px;display:none" id="login-err">비밀번호가 올바르지 않습니다</div>
-      <div style="font-size:11px;color:var(--text2);margin-top:12px">기본 비밀번호: 1234</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:12px">비밀번호 힌트: 내선번호</div>
     </div>
   </div>
 </div>
@@ -1077,7 +1077,7 @@ window.onerror = function(msg, src, line, col, err) {
 /* ══════════════════════════════════════════
    전역 상태
 ══════════════════════════════════════════ */
-const TEACHER_PW = '1234';
+const TEACHER_PW = '0391';
 
 /* ── Supabase 설정 ── */
 // ★ 아래 두 값을 Supabase 대시보드에서 복사해서 붙여넣으세요
