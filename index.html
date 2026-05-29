@@ -1609,7 +1609,7 @@ function showTeamDetail() {
   questions.forEach((q, i) => {
     const block = document.createElement('div');
     block.className = 'ans-block';
-    block.innerHTML = '<div class="ans-q">Q' + (i+1) + '. ' + q + '</div>'
+    block.innerHTML = '<div class="ans-q">Q' + (i+1) + '. ' + (typeof q === 'object' ? q.text : q) + '</div>'
       + '<div class="ans-a">' + renderAnsValue(ans[i], i) + '</div>';
     card.appendChild(block);
   });
@@ -1699,7 +1699,7 @@ function renderSkList() {
         const qblock = document.createElement('div');
         qblock.className = 'sk-qblock';
         qblock.innerHTML = '<div class="sk-qlabel">Q' + (i+1) + '. ' + q + '</div>'
-          + '<div class="sk-qanswer">' + (ans[i] || '<span style="color:var(--text3);font-size:11px">미작성</span>') + '</div>';
+          + '<div class="sk-qanswer">' + renderAnsValue(ans[i], i) + '</div>';
         left.appendChild(qblock);
       });
 
@@ -1994,8 +1994,26 @@ async function saveWorksheet() {
   if (!n1||!id1||!n2||!id2) { st.className='smsg err'; st.textContent='두 팀원의 이름과 학번을 모두 입력해 주세요.'; return; }
   if (!sb) { st.className='smsg err'; st.textContent='DB가 연결되지 않았습니다.'; return; }
   showLoading('저장 중...');
+  // 사진 타입 질문 포함 answers 처리
   const answers = {};
-  questions.forEach((_, i) => { const el = document.getElementById(`ws-q${i}`); if (el) answers[i] = el.value.trim(); });
+  for (let i = 0; i < questions.length; i++) {
+    const q = questions[i];
+    const type = typeof q === 'object' ? (q.type || 'text') : 'text';
+    const el = document.getElementById('ws-q' + i);
+    if (!el) continue;
+    if (type === 'photo') {
+      if (el.files && el.files[0]) {
+        // Supabase Storage에 업로드
+        st.className = 'smsg info'; st.textContent = '사진 업로드 중... (' + (i+1) + '/' + questions.length + ')';
+        const url = await uploadPhotoAnswer(i, id1);
+        answers[i] = url || '';
+      } else {
+        answers[i] = ''; // 사진 미첨부
+      }
+    } else {
+      answers[i] = el.value ? el.value.trim() : '';
+    }
+  }
   const row = {
     name1: n1, student_id1: id1, class1: '', name2: n2, student_id2: id2,
     answers,
@@ -2085,7 +2103,7 @@ async function wsSearch() {
         <div class="sec-label" style="margin-top:0">공동 활동지</div>
         ${questions.map((q,i) => `
           <div class="ans-block">
-            <div class="ans-q">Q${i+1}. ${q}</div>
+            <div class="ans-q">Q${i+1}. ${typeof q === 'object' ? q.text : q}</div>
             <div class="ans-a">${renderAnsValue(ans[i], i)}</div>
           </div>`).join('')}
         <div class="sec-label">개인 소감문</div>
@@ -2113,6 +2131,7 @@ async function wsOpenEdit(id1) {
     if (!data) { alert('활동지를 찾을 수 없습니다.'); hideLoading(); return; }
     wsEditId = data.id;
     await loadQs();
+    const ans = data.answers || {};
     // 팀 정보 채우기
     document.getElementById('ws-en1').value  = data.name1 || '';
     document.getElementById('ws-eid1').value = data.student_id1 || '';
@@ -2256,7 +2275,7 @@ async function savePrompt() {
 
 function dlSeteukExcel() {
   if(!submissions.length){alert('제출된 활동지가 없습니다.');return;}
-  const hdr=['학번1','팀원1','학번2','팀원2',...questions.map((q,i)=>'Q'+(i+1)),'팀원1 소감문','팀원1 관찰내용','팀원1 세특','팀원2 소감문','팀원2 관찰내용','팀원2 세특'];
+  const hdr=['학번1','팀원1','학번2','팀원2',...questions.map((q,i)=>'Q'+(i+1)+(typeof q==='object'&&q.type==='photo'?'(사진)':'')),'팀원1 소감문','팀원1 관찰내용','팀원1 세특','팀원2 소감문','팀원2 관찰내용','팀원2 세특'];
   const rows=submissions.map(s=>{
     const ans=s.answers||{};
     const obs1El=document.getElementById('obs-'+s.id1+'-1');
