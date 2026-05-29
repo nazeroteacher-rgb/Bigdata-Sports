@@ -2086,7 +2086,7 @@ async function wsSearch() {
         ${questions.map((q,i) => `
           <div class="ans-block">
             <div class="ans-q">Q${i+1}. ${q}</div>
-            <div class="ans-a">${ans[i] || '<span style="color:var(--text3)">미작성</span>'}</div>
+            <div class="ans-a">${renderAnsValue(ans[i], i)}</div>
           </div>`).join('')}
         <div class="sec-label">개인 소감문</div>
         <div class="mem-block">
@@ -2118,13 +2118,32 @@ async function wsOpenEdit(id1) {
     document.getElementById('ws-eid1').value = data.student_id1 || '';
     document.getElementById('ws-en2').value  = data.name2 || '';
     document.getElementById('ws-eid2').value = data.student_id2 || '';
-    // 질문 렌더링 (수정용)
-    const ans = data.answers || {};
-    document.getElementById('ws-edit-questions').innerHTML = questions.map((q,i) => `
-      <div class="card">
-        <div class="qt"><span class="qn">${i+1}</span><span>${q}</span></div>
-        <textarea class="fta" id="ws-eq${i}" placeholder="여기에 답변을 작성하세요...">${ans[i]||''}</textarea>
-      </div>`).join('');
+    // 질문 렌더링 (수정용) — 사진 타입 지원
+    const editQArea = document.getElementById('ws-edit-questions');
+    editQArea.innerHTML = '';
+    questions.forEach(function(q, i) {
+      const text = typeof q === 'object' ? q.text : q;
+      const type = typeof q === 'object' ? (q.type || 'text') : 'text';
+      const curVal = ans[i] || '';
+      const card = document.createElement('div');
+      card.className = 'card';
+      if (type === 'photo') {
+        const isUrl = typeof curVal === 'string' && curVal.startsWith('http');
+        card.innerHTML = '<div class="qt"><span class="qn">' + (i+1) + '</span><span>' + text + '</span></div>'
+          + '<div style="margin-top:6px">'
+          + (isUrl ? '<div style="margin-bottom:8px"><a href="' + curVal + '" target="_blank"><img src="' + curVal + '" style="max-width:100%;max-height:180px;border-radius:var(--rad);border:1px solid var(--border);object-fit:contain;display:block"></a>'
+            + '<div style="font-size:11px;color:var(--text3);margin-top:3px"><i class="ti ti-photo" style="font-size:11px"></i> 현재 사진</div></div>' : '')
+          + '<input type="file" accept="image/*" id="ws-eq' + i + '" capture="environment" style="display:none" onchange="previewEditPhoto(' + i + ',this)">'
+          + '<div id="ws-eq' + i + '-preview" style="margin-bottom:8px"></div>'
+          + '<label for="ws-eq' + i + '" class="abtn" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px">'
+          + '<i class="ti ti-camera"></i> ' + (isUrl ? '사진 교체하기' : '사진 첨부하기') + '</label>'
+          + '</div>';
+      } else {
+        card.innerHTML = '<div class="qt"><span class="qn">' + (i+1) + '</span><span>' + text + '</span></div>'
+          + '<textarea class="fta" id="ws-eq' + i + '" placeholder="여기에 답변을 작성하세요...">' + curVal + '</textarea>';
+      }
+      editQArea.appendChild(card);
+    });
     // 소감문
     document.getElementById('ws-eref1').value = data.reflection1 || '';
     document.getElementById('ws-eref2').value = data.reflection2 || '';
@@ -2148,7 +2167,27 @@ async function saveEditWorksheet() {
   if (!sb) { st.className='smsg err'; st.textContent='DB가 연결되지 않았습니다.'; return; }
   showLoading('수정 저장 중...');
   const answers = {};
-  questions.forEach((_, i) => { const el = document.getElementById(`ws-eq${i}`); if (el) answers[i] = el.value.trim(); });
+  for (let i = 0; i < questions.length; i++) {
+    const q = questions[i];
+    const type = typeof q === 'object' ? (q.type || 'text') : 'text';
+    const el = document.getElementById('ws-eq' + i);
+    if (!el) continue;
+    if (type === 'photo') {
+      if (el.files && el.files[0]) {
+        // 새 사진 업로드
+        const url = await uploadPhotoAnswer(i, id1);
+        answers[i] = url || '';
+      } else {
+        // 기존 사진 URL 유지 — Supabase에서 다시 불러오기
+        try {
+          const { data: curData } = await sb.from('submissions').select('answers').eq('id', wsEditId).maybeSingle();
+          answers[i] = (curData && curData.answers && curData.answers[i]) || '';
+        } catch(e) { answers[i] = ''; }
+      }
+    } else {
+      answers[i] = el.value.trim();
+    }
+  }
   const row = {
     name1: n1, student_id1: id1, class1: '', name2: n2, student_id2: id2,
     answers,
@@ -2785,6 +2824,12 @@ async function uploadPhotoAnswer(idx, teamId) {
 /* ── 답변 렌더링 헬퍼 (사진 URL 판별) ── */
 function renderAnsValue(val, qIdx) {
   if (!val) return '<span style="color:var(--text3)">미작성</span>';
+  // URL이면 무조건 사진으로 표시
+  if (typeof val === 'string' && val.startsWith('http')) {
+    return '<a href="'+val+'" target="_blank">'
+      + '<img src="'+val+'" style="max-width:100%;max-height:200px;border-radius:var(--rad);border:1px solid var(--border);object-fit:contain;display:block;margin-top:4px">'
+      + '</a><div style="font-size:10px;color:var(--accent);margin-top:4px"><i class="ti ti-photo" style="font-size:11px"></i> 사진 답변 — 클릭하면 크게 보기</div>';
+  }
   const q = questions[qIdx];
   const type = typeof q === 'object' ? (q.type||'text') : 'text';
   if (type === 'photo' && val.startsWith('http')) {
@@ -3143,6 +3188,18 @@ async function autoSaveRoster(msgEl) {
 
 
 }
+
+function previewEditPhoto(idx, input) {
+  const preview = document.getElementById('ws-eq'+idx+'-preview');
+  if (!preview || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    preview.innerHTML = '<img src="'+e.target.result+'" style="max-width:100%;max-height:180px;border-radius:var(--rad);border:1px solid var(--border);object-fit:contain;display:block">'
+      + '<div style="font-size:11px;color:var(--accent);margin-top:4px"><i class="ti ti-check" style="font-size:11px"></i> 새 사진이 선택됐습니다</div>';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
 </script>
 
 <!-- API 키 설정 모달 -->
